@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="green">#5F8E5C</color>
+    
+    <!-- App Theme Colors -->
+    <color name="primary_green">#5F8E5C</color>
+    <color name="light_green">#8FBC8F</color>
+    <color name="dark_green">#224A35</color>
+    <color name="background_color">#F5F5F5</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="text_primary">#333333</color>
+    <color name="text_secondary">#666666</color>
+    <color name="accent_blue">#4A90E2</color>
+    <color name="accent_orange">#FF8C42</color>
+    <color name="accent_purple">#9B59B6</color>
+    
+    <!-- Bottom Navigation Colors -->
+    <color name="nav_selected">#5F8E5C</color>
+    <color name="nav_unselected">#999999</color>
+    
+    <!-- Mood Colors -->
+    <color name="mood_very_sad">#FF6B6B</color>
+    <color name="mood_sad">#FFB347</color>
+    <color name="mood_neutral">#FFD93D</color>
+    <color name="mood_happy">#6BCF7F</color>
+    <color name="mood_very_happy">#4ECDC4</color>
+    
+</resources>

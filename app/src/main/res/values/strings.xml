@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">DoDaily</string>
+    <string name="todo1">TODO!</string>
+    
+    <!-- Navigation -->
+    <string name="nav_habits">Habits</string>
+    <string name="nav_mood">Mood</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Habits -->
+    <string name="habits_title">Daily Habits</string>
+    <string name="habits_progress">Today\'s Progress: %1$d/%2$d habits completed (%3$d%%)</string>
+    <string name="habits_empty">No habits yet!\nTap the + button to add your first habit</string>
+    <string name="add_habit">Add New Habit</string>
+    <string name="edit_habit">Edit Habit</string>
+    <string name="habit_name">Habit Name</string>
+    <string name="habit_description">Description (Optional)</string>
+    <string name="habit_target_count">Target Count</string>
+    <string name="habit_emoji">Emoji</string>
+    <string name="habit_increment">Add +1</string>
+    <string name="habit_completed">Completed</string>
+    
+    <!-- Mood Journal -->
+    <string name="mood_title">Mood Journal</string>
+    <string name="mood_subtitle">Track your daily emotions and feelings</string>
+    <string name="mood_empty">No mood entries yet!\nTap the + button to log your first mood</string>
+    <string name="mood_how_feeling">How are you feeling right now?</string>
+    <string name="mood_add_note">Add a note (Optional)</string>
+    <string name="mood_very_sad">Very Sad</string>
+    <string name="mood_sad">Sad</string>
+    <string name="mood_neutral">Neutral</string>
+    <string name="mood_happy">Happy</string>
+    <string name="mood_very_happy">Very Happy</string>
+    
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_welcome">Welcome, %1$s!</string>
+    <string name="hydration_reminder">Hydration Reminder</string>
+    <string name="hydration_description">Get reminded to drink water at regular intervals</string>
+    <string name="enable_reminders">Enable Reminders</string>
+    <string name="reminder_interval">Reminder Interval</string>
+    <string name="data_management">Data Management</string>
+    <string name="data_description">Manage your app data and settings</string>
+    <string name="clear_all_data">Clear All Data</string>
+    <string name="about_title">About</string>
+    <string name="about_description">Learn more about DoDaily app</string>
+    <string name="about_dodaily">About DoDaily</string>
+    
+    <!-- Notifications -->
+    <string name="hydration_notification_title">💧 Time to Hydrate!</string>
+    <string name="hydration_notification_text">Don\'t forget to drink some water. Stay hydrated! 💧</string>
+    
+    <!-- Common -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="add">Add</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    
+</resources>

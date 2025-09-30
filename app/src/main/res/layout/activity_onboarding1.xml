@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background"
+    tools:context=".Onboarding_1">
+
+
+<!-- Title -->
+
+    <!-- Illustration -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:text="Welcome to DoDaily"
+        android:textAlignment="center"
+        android:textColor="#0E3247"
+        android:textSize="48sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.504"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.126" />
+
+    <!-- Subtitle -->
+
+    <!-- Buttons -->
+
+    <ImageView
+        android:id="@+id/illustration"
+        android:layout_width="287dp"
+        android:layout_height="334dp"
+        android:layout_marginBottom="90dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/onboarding1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.491"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.447" />
+
+    <TextView
+        android:id="@+id/subtitle"
+        android:layout_width="347dp"
+        android:layout_height="65dp"
+        android:fontFamily="sans-serif-condensed"
+        android:text="Plan your day, track your health, feel better."
+        android:textAlignment="center"
+        android:textColor="#224A35"
+        android:textSize="26sp"
+        app:layout_constraintBottom_toTopOf="@id/buttonLayout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/illustration"
+        app:layout_constraintVertical_bias="0.16" />
+
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="32dp">
+
+        <Button
+            android:id="@+id/skip"
+            android:layout_width="130dp"
+            android:layout_height="58dp"
+            android:backgroundTint="#FFFFFF"
+            android:text="Skip"
+            android:textColor="#5F8F5C"
+            android:textSize="18sp"
+            app:strokeColor="#608C5B"
+            app:strokeWidth="2dp" />
+
+        <Button
+            android:id="@+id/next"
+            android:layout_width="130dp"
+            android:layout_height="58dp"
+            android:layout_marginStart="24dp"
+            android:backgroundTint="#5F8E5C"
+            android:text="Next"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
