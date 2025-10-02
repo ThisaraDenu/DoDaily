@@ -81,6 +81,88 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Calendar Section -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Calendar Header -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <ImageButton
+                            android:id="@+id/prev_month_button"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_chevron_left"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Previous month"
+                            app:tint="@color/text_primary" />
+
+                        <TextView
+                            android:id="@+id/month_year_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="October 2023"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary"
+                            android:gravity="center" />
+
+                        <ImageButton
+                            android:id="@+id/next_month_button"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:src="@drawable/ic_chevron_right"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Next month"
+                            app:tint="@color/text_primary" />
+
+                    </LinearLayout>
+
+                    <!-- Days of the Week -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Sun" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Mon" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Tue" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Wed" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Thu" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Fri" />
+                        <TextView style="@style/CalendarDayOfWeek" android:text="Sat" />
+
+                    </LinearLayout>
+
+                    <!-- Calendar Grid -->
+                    <LinearLayout
+                        android:id="@+id/calendar_grid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
             <!-- Mood Journal Section -->
             <LinearLayout
                 android:layout_width="match_parent"

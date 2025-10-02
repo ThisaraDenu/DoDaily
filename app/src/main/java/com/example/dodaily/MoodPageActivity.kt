@@ -47,7 +47,17 @@ class MoodPageActivity : AppCompatActivity() {
     private lateinit var chartMessage: TextView
     private lateinit var chartTimeRange: TextView
     
+    // Calendar components
+    private lateinit var prevMonthButton: ImageButton
+    private lateinit var nextMonthButton: ImageButton
+    private lateinit var monthYearText: TextView
+    private lateinit var calendarGrid: LinearLayout
+    
     private val moodEntries = mutableListOf<MoodEntry>()
+    private val calendar = Calendar.getInstance()
+    private val selectedDate = Calendar.getInstance()
+    private val dateItems = mutableListOf<TextView>()
+    private var selectedDateIndex = -1
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,6 +84,9 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Setup bottom navigation
         setupBottomNavigation()
+        
+        // Setup calendar
+        setupCalendar()
         
         // Load mood data
         loadMoodData()
@@ -110,6 +123,12 @@ class MoodPageActivity : AppCompatActivity() {
         chartPlaceholder = findViewById(R.id.chart_placeholder)
         chartMessage = findViewById(R.id.chart_message)
         chartTimeRange = findViewById(R.id.chart_time_range)
+        
+        // Initialize calendar components
+        prevMonthButton = findViewById(R.id.prev_month_button)
+        nextMonthButton = findViewById(R.id.next_month_button)
+        monthYearText = findViewById(R.id.month_year_text)
+        calendarGrid = findViewById(R.id.calendar_grid)
         
         // Find stats text views by looking for specific patterns in the layout
         // Since we don't have IDs for them, we'll update them programmatically
@@ -152,6 +171,17 @@ class MoodPageActivity : AppCompatActivity() {
         tabMonthly.setOnClickListener {
             selectTrendTab("monthly")
         }
+        
+        // Calendar click listeners
+        prevMonthButton.setOnClickListener {
+            calendar.add(Calendar.MONTH, -1)
+            setupCalendar()
+        }
+        
+        nextMonthButton.setOnClickListener {
+            calendar.add(Calendar.MONTH, 1)
+            setupCalendar()
+        }
     }
     
     private fun setupBottomNavigation() {
@@ -192,8 +222,10 @@ class MoodPageActivity : AppCompatActivity() {
     
     private fun loadMoodData() {
         moodEntries.clear()
-        val allMoodEntries = dataManager.loadMoodEntries().sortedByDescending { it.dateTime }
-        moodEntries.addAll(allMoodEntries)
+        // Load today's mood entries by default
+        val today = Calendar.getInstance()
+        val todayEntries = dataManager.getMoodEntriesForDate(today.time).sortedByDescending { it.dateTime }
+        moodEntries.addAll(todayEntries)
         
         moodAdapter.notifyDataSetChanged()
         updateUI()
@@ -474,6 +506,170 @@ class MoodPageActivity : AppCompatActivity() {
             .setMessage("${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n\n$dateString\n\n${moodEntry.note}")
             .setPositiveButton("OK", null)
             .show()
+    }
+    
+    private fun setupCalendar() {
+        // Clear existing calendar
+        calendarGrid.removeAllViews()
+        dateItems.clear()
+        
+        // Set calendar to first day of the month
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        val firstDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+        val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+        
+        // Calculate days from previous month to show
+        val daysFromPrevMonth = (firstDayOfWeek - Calendar.SUNDAY + 7) % 7
+        
+        // Update month/year text
+        val monthYearFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
+        monthYearText.text = monthYearFormat.format(calendar.time)
+        
+        // Create calendar rows
+        var currentDay = 1
+        val totalCells = daysFromPrevMonth + daysInMonth
+        val rows = (totalCells + 6) / 7 // Round up to get number of rows
+        
+        for (row in 0 until rows) {
+            val rowLayout = createCalendarRow()
+            
+            for (col in 0 until 7) {
+                val cellIndex = row * 7 + col
+                val dateItem = createDateItem(cellIndex, daysFromPrevMonth, daysInMonth, currentDay)
+                rowLayout.addView(dateItem)
+                dateItems.add(dateItem)
+                
+                if (cellIndex >= daysFromPrevMonth && currentDay <= daysInMonth) {
+                    currentDay++
+                }
+            }
+            
+            calendarGrid.addView(rowLayout)
+        }
+        
+        // Highlight today's date
+        highlightToday()
+    }
+    
+    private fun createCalendarRow(): LinearLayout {
+        val rowLayout = LinearLayout(this)
+        rowLayout.orientation = LinearLayout.HORIZONTAL
+        rowLayout.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        return rowLayout
+    }
+    
+    private fun createDateItem(cellIndex: Int, daysFromPrevMonth: Int, daysInMonth: Int, currentDay: Int): TextView {
+        val dateItem = TextView(this)
+        val layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        layoutParams.setMargins(2, 2, 2, 2)
+        dateItem.layoutParams = layoutParams
+        
+        dateItem.textSize = 16f
+        dateItem.gravity = android.view.Gravity.CENTER
+        dateItem.setPadding(8, 8, 8, 8)
+        dateItem.background = getDrawable(R.drawable.calendar_date_background)
+        dateItem.isClickable = true
+        dateItem.isFocusable = true
+        
+        if (cellIndex >= daysFromPrevMonth && currentDay <= daysInMonth) {
+            // Current month day
+            dateItem.text = currentDay.toString()
+            dateItem.setTextColor(getColor(R.color.text_primary))
+            dateItem.setOnClickListener { selectDate(cellIndex) }
+        } else {
+            // Empty cell
+            dateItem.text = ""
+            dateItem.setTextColor(getColor(android.R.color.transparent))
+        }
+        
+        return dateItem
+    }
+    
+    private fun selectDate(index: Int) {
+        // Update selected date index
+        selectedDateIndex = index
+        
+        // Update visual selection
+        for (i in dateItems.indices) {
+            val item = dateItems[i]
+            if (i == index && item.text.isNotEmpty()) {
+                item.isSelected = true
+                item.setTextColor(getColor(R.color.white))
+            } else {
+                item.isSelected = false
+                item.setTextColor(getColor(R.color.text_primary))
+            }
+        }
+        
+        // Calculate the actual selected date
+        val daysFromPrevMonth = (calendar.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY + 7) % 7
+        val dayOfMonth = index - daysFromPrevMonth + 1
+        
+        if (dayOfMonth > 0 && dayOfMonth <= calendar.getActualMaximum(Calendar.DAY_OF_MONTH)) {
+            // Set selected date
+            selectedDate.set(Calendar.YEAR, calendar.get(Calendar.YEAR))
+            selectedDate.set(Calendar.MONTH, calendar.get(Calendar.MONTH))
+            selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            
+            // Filter mood entries for selected date
+            filterMoodEntriesForDate(selectedDate.time)
+        }
+    }
+    
+    private fun highlightToday() {
+        val today = Calendar.getInstance()
+        if (today.get(Calendar.YEAR) == calendar.get(Calendar.YEAR) && 
+            today.get(Calendar.MONTH) == calendar.get(Calendar.MONTH)) {
+            
+            val todayDay = today.get(Calendar.DAY_OF_MONTH)
+            val daysFromPrevMonth = (calendar.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY + 7) % 7
+            val todayIndex = daysFromPrevMonth + todayDay - 1
+            
+            if (todayIndex < dateItems.size) {
+                val todayItem = dateItems[todayIndex]
+                todayItem.setTextColor(getColor(R.color.primary_green))
+                todayItem.setTypeface(null, android.graphics.Typeface.BOLD)
+            }
+        }
+    }
+    
+    private fun filterMoodEntriesForDate(date: Date) {
+        // Filter mood entries for the selected date
+        val filteredEntries = dataManager.getMoodEntriesForDate(date)
+        
+        // Update the mood entries list
+        moodEntries.clear()
+        moodEntries.addAll(filteredEntries)
+        
+        // Update the adapter
+        moodAdapter.notifyDataSetChanged()
+        
+        // Show/hide empty state
+        if (moodEntries.isEmpty()) {
+            moodEmptyState.visibility = View.VISIBLE
+            moodEntriesRecycler.visibility = View.GONE
+        } else {
+            moodEmptyState.visibility = View.GONE
+            moodEntriesRecycler.visibility = View.VISIBLE
+        }
+        
+        // Update chart for selected date
+        updateChartForSelectedDate()
+    }
+    
+    private fun updateChartForSelectedDate() {
+        // Update the chart to show data for the selected date
+        if (moodEntries.isNotEmpty()) {
+            drawTodayMoodChart(moodEntries)
+            chartTimeRange.text = "Selected Date"
+        } else {
+            clearChartData()
+            chartMessage.text = "No mood data for selected date"
+            chartTimeRange.text = "Selected Date"
+        }
     }
     
 }
