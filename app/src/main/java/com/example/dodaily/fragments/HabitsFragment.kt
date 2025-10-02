@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.dodaily.R
 import com.example.dodaily.data.DataManager
 import com.example.dodaily.model.Habit
+import com.example.dodaily.model.HabitWithCompletion
+import com.example.dodaily.model.DateType
 import com.example.dodaily.adapters.HabitsAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.*
@@ -29,8 +31,14 @@ class HabitsFragment : Fragment() {
     private lateinit var emptyStateLayout: LinearLayout
     private lateinit var emptyStateText: TextView
     private lateinit var progressText: TextView
+    private lateinit var dateTypeText: TextView
     
     private val habits = mutableListOf<Habit>()
+    private var selectedDate: Date = Date()
+    private var dateType: DateType = DateType.TODAY
+    
+    // Callback to notify parent activity when habits are updated
+    var onHabitsUpdated: (() -> Unit)? = null
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,6 +60,7 @@ class HabitsFragment : Fragment() {
         emptyStateLayout = view.findViewById(R.id.empty_state_layout)
         emptyStateText = view.findViewById(R.id.empty_state_text)
         progressText = view.findViewById(R.id.progress_text)
+        dateTypeText = view.findViewById(R.id.date_type_text)
         
         // Setup RecyclerView
         setupRecyclerView()
@@ -62,6 +71,15 @@ class HabitsFragment : Fragment() {
         }
         
         // Load habits
+        loadHabits()
+    }
+    
+    /**
+     * Update the selected date and refresh habits
+     */
+    fun updateSelectedDate(date: Date) {
+        selectedDate = date
+        dateType = dataManager.getDateType(date)
         loadHabits()
     }
     
@@ -80,12 +98,54 @@ class HabitsFragment : Fragment() {
     
     private fun loadHabits() {
         habits.clear()
-        habits.addAll(dataManager.loadHabits())
+        
+        when (dateType) {
+            DateType.TODAY -> {
+                // Load current habits for today, but exclude completed ones
+                val allHabits = dataManager.loadHabits()
+                val completedHabits = dataManager.getHabitsWithCompletionForDate(selectedDate)
+                    .filter { it.isCompleted }
+                    .map { it.habit.id }
+                    .toSet()
+                
+                // Only show incomplete habits
+                habits.addAll(allHabits.filter { !completedHabits.contains(it.id) })
+            }
+            DateType.PAST -> {
+                // Load habits with completion status for past date
+                val habitsWithCompletion = dataManager.getHabitsWithCompletionForDate(selectedDate)
+                habits.addAll(habitsWithCompletion.map { it.habit })
+            }
+            DateType.FUTURE -> {
+                // Load all habits for future planning
+                habits.addAll(dataManager.loadHabits())
+            }
+        }
+        
         habitsAdapter.notifyDataSetChanged()
         updateUI()
     }
     
     private fun updateUI() {
+        // Update date type text
+        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        val dateString = dateFormat.format(selectedDate)
+        
+        when (dateType) {
+            DateType.TODAY -> {
+                dateTypeText.text = "Today - $dateString"
+                addHabitFab.visibility = View.VISIBLE
+            }
+            DateType.PAST -> {
+                dateTypeText.text = "Past - $dateString"
+                addHabitFab.visibility = View.GONE
+            }
+            DateType.FUTURE -> {
+                dateTypeText.text = "Future - $dateString"
+                addHabitFab.visibility = View.VISIBLE
+            }
+        }
+        
         if (habits.isEmpty()) {
             emptyStateLayout.visibility = View.VISIBLE
             habitsRecyclerView.visibility = View.GONE
@@ -95,14 +155,29 @@ class HabitsFragment : Fragment() {
             habitsRecyclerView.visibility = View.VISIBLE
             progressText.visibility = View.VISIBLE
             
-            // Calculate overall progress
-            val totalHabits = habits.size
-            val completedHabits = habits.count { it.isFullyCompleted() }
-            val progressPercentage = if (totalHabits > 0) {
-                (completedHabits * 100) / totalHabits
-            } else 0
-            
-            progressText.text = "Today's Progress: $completedHabits/$totalHabits habits completed ($progressPercentage%)"
+            // Calculate progress based on date type
+            when (dateType) {
+                DateType.TODAY -> {
+                    val totalHabits = habits.size
+                    val completedHabits = habits.count { it.isFullyCompleted() }
+                    val progressPercentage = if (totalHabits > 0) {
+                        (completedHabits * 100) / totalHabits
+                    } else 0
+                    progressText.text = "Today's Progress: $completedHabits/$totalHabits habits completed ($progressPercentage%)"
+                }
+                DateType.PAST -> {
+                    val habitsWithCompletion = dataManager.getHabitsWithCompletionForDate(selectedDate)
+                    val totalHabits = habitsWithCompletion.size
+                    val completedHabits = habitsWithCompletion.count { it.isCompleted }
+                    val progressPercentage = if (totalHabits > 0) {
+                        (completedHabits * 100) / totalHabits
+                    } else 0
+                    progressText.text = "Completed: $completedHabits/$totalHabits habits ($progressPercentage%)"
+                }
+                DateType.FUTURE -> {
+                    progressText.text = "Plan your habits for $dateString"
+                }
+            }
         }
     }
     
@@ -195,11 +270,37 @@ class HabitsFragment : Fragment() {
     }
     
     private fun incrementHabit(habit: Habit) {
-        val updatedHabit = habit.copy(
-            currentCount = habit.currentCount + 1,
-            isCompleted = (habit.currentCount + 1) >= habit.targetCount
-        )
-        dataManager.updateHabit(updatedHabit)
+        when (dateType) {
+            DateType.TODAY -> {
+                // Update current habit for today
+                val updatedHabit = habit.copy(
+                    currentCount = habit.currentCount + 1,
+                    isCompleted = (habit.currentCount + 1) >= habit.targetCount
+                )
+                dataManager.updateHabit(updatedHabit)
+                
+                // Also track completion for this date
+                dataManager.completeHabitForDate(habit.id, selectedDate, 1)
+                
+                // Check if habit is now completed
+                val isNowCompleted = (habit.currentCount + 1) >= habit.targetCount
+                if (isNowCompleted) {
+                    Toast.makeText(context, "🎉 ${habit.name} completed!", Toast.LENGTH_SHORT).show()
+                }
+            }
+            DateType.PAST -> {
+                // Cannot modify past habits
+                Toast.makeText(context, "Cannot modify past habits", Toast.LENGTH_SHORT).show()
+                return
+            }
+            DateType.FUTURE -> {
+                // Track completion for future date
+                dataManager.completeHabitForDate(habit.id, selectedDate, 1)
+            }
+        }
         loadHabits()
+        
+        // Notify parent activity that habits have been updated
+        onHabitsUpdated?.invoke()
     }
 }

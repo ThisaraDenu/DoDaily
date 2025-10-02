@@ -1,38 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp"
+    android:background="@drawable/dialog_background">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:layout_width="284dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="✨         Create New Habit"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎯"
+            android:textSize="28sp" />
+            
+    </LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="20dp"
         android:hint="Habit Name *"
-        app:boxStrokeColor="@color/primary_green">
+        app:boxStrokeColor="@color/primary_green"
+        app:boxStrokeWidth="2dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:hintTextColor="@color/primary_green"
+        app:startIconDrawable="@drawable/ic_habit_name"
+        app:startIconTint="@color/primary_green">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/habit_name_edit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textCapSentences" />
+            android:inputType="textCapSentences"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="20dp"
         android:hint="Description (Optional)"
-        app:boxStrokeColor="@color/primary_green">
+        app:boxStrokeColor="@color/primary_green"
+        app:boxStrokeWidth="2dp"
+        app:boxCornerRadiusTopStart="12dp"
+        app:boxCornerRadiusTopEnd="12dp"
+        app:boxCornerRadiusBottomStart="12dp"
+        app:boxCornerRadiusBottomEnd="12dp"
+        app:hintTextColor="@color/primary_green"
+        app:startIconDrawable="@drawable/ic_description"
+        app:startIconTint="@color/primary_green">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/habit_description_edit"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textCapSentences|textMultiLine"
-            android:maxLines="3" />
+            android:maxLines="3"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -46,16 +93,27 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="12dp"
             android:hint="Target Count"
-            app:boxStrokeColor="@color/primary_green">
+            app:boxStrokeColor="@color/primary_green"
+            app:boxStrokeWidth="2dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:hintTextColor="@color/primary_green"
+            app:startIconDrawable="@drawable/ic_target"
+            app:startIconTint="@color/primary_green">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/habit_target_count_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number"
-                android:text="1" />
+                android:text="1"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:gravity="center" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -63,16 +121,27 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="12dp"
             android:hint="Emoji"
-            app:boxStrokeColor="@color/primary_green">
+            app:boxStrokeColor="@color/primary_green"
+            app:boxStrokeWidth="2dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:hintTextColor="@color/primary_green"
+            app:startIconDrawable="@drawable/ic_emoji"
+            app:startIconTint="@color/primary_green">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/habit_emoji_edit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
-                android:maxLength="2" />
+                android:maxLength="2"
+                android:textSize="20sp"
+                android:textColor="@color/text_primary"
+                android:gravity="center" />
 
         </com.google.android.material.textfield.TextInputLayout>
 

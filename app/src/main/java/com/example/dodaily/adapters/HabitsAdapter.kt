@@ -26,6 +26,7 @@ class HabitsAdapter(
         val descriptionText: TextView = itemView.findViewById(R.id.habit_description)
         val progressText: TextView = itemView.findViewById(R.id.habit_progress)
         val progressBar: ProgressBar = itemView.findViewById(R.id.habit_progress_bar)
+        val progressPercentage: TextView = itemView.findViewById(R.id.progress_percentage)
         val incrementButton: Button = itemView.findViewById(R.id.increment_button)
         val editButton: ImageButton = itemView.findViewById(R.id.edit_button)
         val deleteButton: ImageButton = itemView.findViewById(R.id.delete_button)
@@ -50,17 +51,19 @@ class HabitsAdapter(
         val progressPercentage = habit.getCompletionPercentage()
         holder.progressText.text = "${habit.currentCount}/${habit.targetCount}"
         holder.progressBar.progress = progressPercentage.toInt()
+        holder.progressPercentage.text = "${progressPercentage.toInt()}%"
         
         // Set completion status
         if (habit.isFullyCompleted()) {
             holder.completedIcon.visibility = View.VISIBLE
+            holder.completedIcon.startAnimation(android.view.animation.AnimationUtils.loadAnimation(holder.itemView.context, R.anim.scale_up))
             holder.incrementButton.isEnabled = false
-            holder.incrementButton.text = "Completed"
+            holder.incrementButton.text = "🎉 Completed!"
             holder.incrementButton.backgroundTintList = holder.itemView.context.getColorStateList(R.color.light_green)
         } else {
             holder.completedIcon.visibility = View.GONE
             holder.incrementButton.isEnabled = true
-            holder.incrementButton.text = "Add +1"
+            holder.incrementButton.text = "✨ Add +1"
             holder.incrementButton.backgroundTintList = holder.itemView.context.getColorStateList(R.color.primary_green)
         }
         

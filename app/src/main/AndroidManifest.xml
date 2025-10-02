@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -18,8 +17,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DoDaily">
         <activity
+            android:name=".SettingActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+        <activity
             android:name=".HomeActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
         <activity
             android:name=".SignUpActivity"
             android:exported="false" />
@@ -47,19 +51,24 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <!-- Services -->
+        <activity
+            android:name=".MoodActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MoodPageActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+        <activity
+            android:name=".MoodLoggingActivity"
+            android:exported="false" /> <!-- Services -->
         <service
             android:name=".services.HydrationReminderService"
             android:enabled="true"
-            android:exported="false" />
-        
-        <!-- Receivers -->
+            android:exported="false" /> <!-- Receivers -->
         <receiver
             android:name=".services.HydrationReminderReceiver"
             android:enabled="true"
             android:exported="false" />
-            
     </application>
 
 </manifest>

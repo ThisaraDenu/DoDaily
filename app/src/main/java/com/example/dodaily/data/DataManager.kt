@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.dodaily.model.Habit
 import com.example.dodaily.model.MoodEntry
+import com.example.dodaily.model.HabitCompletion
+import com.example.dodaily.model.HabitWithCompletion
+import com.example.dodaily.model.DateType
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.Date
@@ -20,6 +23,7 @@ class DataManager(private val context: Context) {
     companion object {
         private const val KEY_HABITS = "habits"
         private const val KEY_MOOD_ENTRIES = "mood_entries"
+        private const val KEY_HABIT_COMPLETIONS = "habit_completions"
         private const val KEY_HYDRATION_REMINDER_ENABLED = "hydration_reminder_enabled"
         private const val KEY_HYDRATION_INTERVAL = "hydration_interval"
         private const val KEY_LAST_RESET_DATE = "last_reset_date"
@@ -93,10 +97,138 @@ class DataManager(private val context: Context) {
         
         // Only reset if it's a new day
         if (lastReset == null || !isSameDay(today, lastReset)) {
-            val habits = loadHabits().map { it.resetForNewDay() }
+            val habits = loadHabits().map { habit -> habit.copyResetForNewDay() }
             saveHabits(habits)
             setLastResetDate(today)
         }
+    }
+    
+    // ========== HABIT COMPLETION TRACKING ==========
+    
+    /**
+     * Update habit completion status for a specific date
+     */
+    fun updateHabitCompletion(habitId: String, date: Date, isCompleted: Boolean) {
+        val completions = loadHabitCompletions()
+        val dateKey = getDateKey(date)
+        
+        val existingCompletion = completions.find { it.habitId == habitId && it.dateKey == dateKey }
+        if (existingCompletion != null) {
+            // Update existing completion
+            val updatedCompletion = existingCompletion.copy(
+                isCompleted = isCompleted,
+                completedCount = if (isCompleted) getHabitTargetCount(habitId) else existingCompletion.completedCount
+            )
+            val updatedCompletions = completions.map { if (it.habitId == habitId && it.dateKey == dateKey) updatedCompletion else it }
+            saveHabitCompletions(updatedCompletions)
+        } else if (isCompleted) {
+            // Create new completion if marking as completed
+            val newCompletion = HabitCompletion(
+                habitId = habitId,
+                dateKey = dateKey,
+                completedCount = getHabitTargetCount(habitId),
+                isCompleted = true
+            )
+            val updatedCompletions = completions + newCompletion
+            saveHabitCompletions(updatedCompletions)
+        }
+    }
+    
+    /**
+     * Track habit completion for a specific date
+     */
+    fun completeHabitForDate(habitId: String, date: Date, count: Int = 1) {
+        val completions = loadHabitCompletions()
+        val dateKey = getDateKey(date)
+        
+        val existingCompletion = completions.find { it.habitId == habitId && it.dateKey == dateKey }
+        if (existingCompletion != null) {
+            // Update existing completion
+            val updatedCompletion = existingCompletion.copy(
+                completedCount = existingCompletion.completedCount + count,
+                isCompleted = existingCompletion.completedCount + count >= getHabitTargetCount(habitId)
+            )
+            val updatedCompletions = completions.map { if (it.habitId == habitId && it.dateKey == dateKey) updatedCompletion else it }
+            saveHabitCompletions(updatedCompletions)
+        } else {
+            // Create new completion
+            val newCompletion = HabitCompletion(
+                habitId = habitId,
+                dateKey = dateKey,
+                completedCount = count,
+                isCompleted = count >= getHabitTargetCount(habitId)
+            )
+            val updatedCompletions = completions + newCompletion
+            saveHabitCompletions(updatedCompletions)
+        }
+    }
+    
+    /**
+     * Get habit completions for a specific date
+     */
+    fun getHabitCompletionsForDate(date: Date): List<HabitCompletion> {
+        val dateKey = getDateKey(date)
+        return loadHabitCompletions().filter { it.dateKey == dateKey }
+    }
+    
+    /**
+     * Get all habits with their completion status for a specific date
+     */
+    fun getHabitsWithCompletionForDate(date: Date): List<HabitWithCompletion> {
+        val habits = loadHabits()
+        val completions = getHabitCompletionsForDate(date)
+        
+        return habits.map { habit ->
+            val completion = completions.find { it.habitId == habit.id }
+            HabitWithCompletion(
+                habit = habit,
+                completedCount = completion?.completedCount ?: 0,
+                isCompleted = completion?.isCompleted ?: false,
+                date = date
+            )
+        }
+    }
+    
+    /**
+     * Check if a date is in the past, present, or future
+     */
+    fun getDateType(date: Date): DateType {
+        val today = Date()
+        return when {
+            isSameDay(date, today) -> DateType.TODAY
+            date.before(today) -> DateType.PAST
+            else -> DateType.FUTURE
+        }
+    }
+    
+    private fun loadHabitCompletions(): List<HabitCompletion> {
+        val completionsJson = prefs.getString(KEY_HABIT_COMPLETIONS, null)
+        return if (completionsJson != null) {
+            try {
+                val type = object : TypeToken<List<HabitCompletion>>() {}.type
+                gson.fromJson(completionsJson, type) ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    }
+    
+    private fun saveHabitCompletions(completions: List<HabitCompletion>) {
+        val completionsJson = gson.toJson(completions)
+        prefs.edit().putString(KEY_HABIT_COMPLETIONS, completionsJson).apply()
+    }
+    
+    private fun getDateKey(date: Date): String {
+        val calendar = java.util.Calendar.getInstance()
+        calendar.time = date
+        return "${calendar.get(java.util.Calendar.YEAR)}-${calendar.get(java.util.Calendar.MONTH)}-${calendar.get(java.util.Calendar.DAY_OF_MONTH)}"
+    }
+    
+    private fun getHabitTargetCount(habitId: String): Int {
+        val habit = loadHabits().find { it.id == habitId }
+        return habit?.targetCount ?: 1
     }
     
     // ========== MOOD ENTRY MANAGEMENT ==========

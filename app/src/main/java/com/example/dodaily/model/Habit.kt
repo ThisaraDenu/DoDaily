@@ -54,4 +54,14 @@ data class Habit(
         currentCount = 0
         isCompleted = false
     }
+    
+    /**
+     * Create a copy of this habit with reset values for a new day
+     */
+    fun copyResetForNewDay(): Habit {
+        return this.copy(
+            currentCount = 0,
+            isCompleted = false
+        )
+    }
 }

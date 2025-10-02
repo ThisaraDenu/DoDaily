@@ -5,15 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:elevation="4dp"
-    app:cardCornerRadius="12dp"
-    app:cardBackgroundColor="@color/card_background">
+    android:elevation="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardBackgroundColor="@color/card_background"
+    android:stateListAnimator="@animator/card_elevation_animator">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp"
+        android:background="@drawable/habit_card_background">
 
         <!-- Header Row -->
         <LinearLayout
@@ -22,13 +24,21 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/habit_emoji"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📝"
-                android:textSize="24sp"
-                android:layout_marginEnd="12dp" />
+                android:background="@drawable/emoji_circle_background"
+                android:padding="8dp"
+                android:layout_marginEnd="16dp">
+                
+                <TextView
+                    android:id="@+id/habit_emoji"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📝"
+                    android:textSize="28sp" />
+                    
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -105,15 +115,35 @@
 
             </LinearLayout>
 
-            <ProgressBar
-                android:id="@+id/habit_progress_bar"
-                style="?android:attr/progressBarStyleHorizontal"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="4dp"
-                android:progressTint="@color/primary_green"
-                android:progress="0"
-                android:max="100" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp">
+                
+                <ProgressBar
+                    android:id="@+id/habit_progress_bar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:progressTint="@color/primary_green"
+                    android:progressBackgroundTint="@color/light_green"
+                    android:progress="0"
+                    android:max="100"
+                    android:background="@drawable/progress_bar_background" />
+                    
+                <TextView
+                    android:id="@+id/progress_percentage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="4dp"
+                    android:text="0%"
+                    android:textSize="12sp"
+                    android:textColor="@color/primary_green"
+                    android:textStyle="bold" />
+                    
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -128,30 +158,34 @@
             <Button
                 android:id="@+id/increment_button"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Add +1"
+                android:text="✨ Add +1"
                 android:textColor="@color/white"
-                android:backgroundTint="@color/primary_green"
-                android:layout_marginEnd="8dp" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/button_gradient_background"
+                android:layout_marginEnd="12dp"
+                android:elevation="4dp" />
 
             <ImageButton
                 android:id="@+id/edit_button"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@drawable/ic_edit"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/icon_button_background"
                 android:contentDescription="Edit habit"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="8dp"
+                app:tint="@color/primary_blue" />
 
             <ImageButton
                 android:id="@+id/delete_button"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@drawable/ic_delete"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@drawable/icon_button_background"
                 android:contentDescription="Delete habit"
-                android:tint="@color/mood_very_sad" />
+                app:tint="@color/mood_very_sad" />
 
         </LinearLayout>
 

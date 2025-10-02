@@ -6,10 +6,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dodaily.R
+import com.example.dodaily.MoodActivity
 import com.example.dodaily.data.DataManager
 import com.example.dodaily.model.MoodEntry
 import com.example.dodaily.adapters.MoodEntriesAdapter
@@ -33,8 +35,8 @@ class MoodJournalFragment : Fragment() {
     private lateinit var shareButton: Button
     
     private val moodEntries = mutableListOf<MoodEntry>()
-    private val moodEmojis = listOf("😢", "😔", "😐", "😊", "😄")
-    private val moodLevels = listOf(1, 2, 3, 4, 5)
+    private val moodEmojis = listOf("😊", "🤩", "😐", "😢", "😠") // Happy, Excited, Neutral, Sad, Angry
+    private val moodLevels = listOf(5, 4, 3, 2, 1) // Happy, Excited, Neutral, Sad, Angry
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,7 +65,8 @@ class MoodJournalFragment : Fragment() {
         
         // Setup FAB
         addMoodFab.setOnClickListener {
-            showAddMoodDialog()
+            val intent = Intent(requireContext(), MoodActivity::class.java)
+            startActivity(intent)
         }
         
         // Setup chart button
@@ -111,13 +114,13 @@ class MoodJournalFragment : Fragment() {
     }
     
     private fun showAddMoodDialog() {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_mood, null)
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.activity_mood, null)
         val emojiButtons = listOf(
-            dialogView.findViewById<Button>(R.id.mood_1),
-            dialogView.findViewById<Button>(R.id.mood_2),
-            dialogView.findViewById<Button>(R.id.mood_3),
-            dialogView.findViewById<Button>(R.id.mood_4),
-            dialogView.findViewById<Button>(R.id.mood_5)
+            dialogView.findViewById<Button>(R.id.mood_happy),
+            dialogView.findViewById<Button>(R.id.mood_excited),
+            dialogView.findViewById<Button>(R.id.mood_neutral),
+            dialogView.findViewById<Button>(R.id.mood_sad),
+            dialogView.findViewById<Button>(R.id.mood_angry)
         )
         val noteEditText = dialogView.findViewById<EditText>(R.id.mood_note_edit)
         
@@ -135,13 +138,13 @@ class MoodJournalFragment : Fragment() {
             }
         }
         
-        // Select neutral mood by default
+        // Select neutral mood by default (index 2 in the array)
         emojiButtons[2].isSelected = true
         
         AlertDialog.Builder(requireContext())
             .setTitle("How are you feeling?")
             .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
+            .setPositiveButton("Save") { _: android.content.DialogInterface, _: Int ->
                 val note = noteEditText.text.toString().trim()
                 val moodEntry = MoodEntry(
                     emoji = moodEmojis[selectedMoodLevel - 1],
@@ -158,17 +161,20 @@ class MoodJournalFragment : Fragment() {
     private fun showEditMoodDialog(moodEntry: MoodEntry) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_mood, null)
         val emojiButtons = listOf(
-            dialogView.findViewById<Button>(R.id.mood_1),
-            dialogView.findViewById<Button>(R.id.mood_2),
-            dialogView.findViewById<Button>(R.id.mood_3),
-            dialogView.findViewById<Button>(R.id.mood_4),
-            dialogView.findViewById<Button>(R.id.mood_5)
+            dialogView.findViewById<Button>(R.id.mood_happy),
+            dialogView.findViewById<Button>(R.id.mood_excited),
+            dialogView.findViewById<Button>(R.id.mood_neutral),
+            dialogView.findViewById<Button>(R.id.mood_sad),
+            dialogView.findViewById<Button>(R.id.mood_angry)
         )
         val noteEditText = dialogView.findViewById<EditText>(R.id.mood_note_edit)
         
         // Pre-fill with existing values
         noteEditText.setText(moodEntry.note)
-        emojiButtons[moodEntry.moodLevel - 1].isSelected = true
+        val moodIndex = moodLevels.indexOf(moodEntry.moodLevel)
+        if (moodIndex >= 0) {
+            emojiButtons[moodIndex].isSelected = true
+        }
         
         var selectedMoodLevel = moodEntry.moodLevel
         
@@ -187,7 +193,7 @@ class MoodJournalFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Edit Mood Entry")
             .setView(dialogView)
-            .setPositiveButton("Save") { _, _ ->
+            .setPositiveButton("Save") { _: android.content.DialogInterface, _: Int ->
                 val note = noteEditText.text.toString().trim()
                 val updatedMoodEntry = moodEntry.copy(
                     emoji = moodEmojis[selectedMoodLevel - 1],
