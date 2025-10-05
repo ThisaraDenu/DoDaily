@@ -1,5 +1,6 @@
 package com.example.dodaily.model
 
+import java.io.Serializable
 import java.util.Date
 
 /**
@@ -15,18 +16,18 @@ data class MoodEntry(
     val emoji: String = "😊",
     val note: String = "",
     val dateTime: Date = Date(),
-    val moodLevel: Int = 3 // 1 = very sad, 5 = very happy
-) {
+    val moodLevel: Int = 3 // 1 = Angry, 2 = Sad, 3 = Neutral, 4 = Excited, 5 = Happy
+) : Serializable {
     /**
      * Get mood description based on level
      */
     fun getMoodDescription(): String {
         return when (moodLevel) {
-            1 -> "Very Sad"
+            1 -> "Angry"
             2 -> "Sad"
             3 -> "Neutral"
-            4 -> "Happy"
-            5 -> "Very Happy"
+            4 -> "Excited"
+            5 -> "Happy"
             else -> "Unknown"
         }
     }
@@ -36,11 +37,11 @@ data class MoodEntry(
      */
     fun getMoodColor(): String {
         return when (moodLevel) {
-            1 -> "#FF6B6B" // Red
-            2 -> "#FFB347" // Orange
-            3 -> "#FFD93D" // Yellow
-            4 -> "#6BCF7F" // Light Green
-            5 -> "#4ECDC4" // Teal
+            1 -> "#FF6B6B" // Red (Angry)
+            2 -> "#FFB347" // Orange (Sad)
+            3 -> "#FFD93D" // Yellow (Neutral)
+            4 -> "#6BCF7F" // Light Green (Excited)
+            5 -> "#4ECDC4" // Teal (Happy)
             else -> "#CCCCCC" // Gray
         }
     }

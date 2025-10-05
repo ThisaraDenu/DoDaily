@@ -19,7 +19,7 @@
             android:layout_width="284dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="✨         Create New Habit"
+            android:text="✨ Create New Habit"
             android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:textStyle="bold" />

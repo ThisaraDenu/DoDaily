@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +18,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.DoDaily">
+        <activity
+            android:name=".MoodUpdateActivity"
+            android:exported="false" />
         <activity
             android:name=".SettingActivity"
             android:exported="false"
@@ -60,6 +65,9 @@
             android:launchMode="singleTop" />
         <activity
             android:name=".MoodLoggingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".HydrationSettingsActivity"
             android:exported="false" /> <!-- Services -->
         <service
             android:name=".services.HydrationReminderService"
@@ -67,6 +75,10 @@
             android:exported="false" /> <!-- Receivers -->
         <receiver
             android:name=".services.HydrationReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <receiver
+            android:name=".receivers.HydrationAlarmReceiver"
             android:enabled="true"
             android:exported="false" />
     </application>

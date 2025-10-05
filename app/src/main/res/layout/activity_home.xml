@@ -329,7 +329,7 @@
                 <FrameLayout
                     android:id="@+id/fragment_container"
                     android:layout_width="match_parent"
-                    android:layout_height="650dp"
+                    android:layout_height="697dp"
                     android:background="@color/white"
                     android:padding="8dp" />
 

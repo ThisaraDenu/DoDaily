@@ -57,8 +57,7 @@ class MoodJournalFragment : Fragment() {
         addMoodFab = view.findViewById(R.id.add_mood_fab)
         emptyStateLayout = view.findViewById(R.id.empty_state_layout)
         emptyStateText = view.findViewById(R.id.empty_state_text)
-        moodChartButton = view.findViewById(R.id.mood_chart_button)
-        shareButton = view.findViewById(R.id.share_button)
+
         
         // Setup RecyclerView
         setupRecyclerView()
@@ -84,12 +83,30 @@ class MoodJournalFragment : Fragment() {
     }
     
     private fun setupRecyclerView() {
-        moodAdapter = MoodEntriesAdapter(moodEntries) { moodEntry ->
-            showEditMoodDialog(moodEntry)
-        }
+        moodAdapter = MoodEntriesAdapter(
+            moodEntries = moodEntries,
+            onMoodEntryClick = { moodEntry ->
+                // Collapse any expanded items when viewing details
+                moodAdapter.collapseAll()
+                showMoodEntryDetails(moodEntry)
+            },
+            onEditClick = { moodEntry ->
+                openMoodUpdateActivity(moodEntry)
+            },
+            onDeleteClick = { moodEntry ->
+                showDeleteConfirmationDialog(moodEntry)
+            }
+        )
         
         moodRecyclerView.layoutManager = LinearLayoutManager(context)
         moodRecyclerView.adapter = moodAdapter
+        
+        // Add click listener to collapse expanded items when tapping outside
+        moodRecyclerView.setOnClickListener {
+            if (moodAdapter.hasExpandedItem()) {
+                moodAdapter.collapseAll()
+            }
+        }
     }
     
     private fun loadMoodEntries() {
@@ -115,25 +132,24 @@ class MoodJournalFragment : Fragment() {
     
     private fun showAddMoodDialog() {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.activity_mood, null)
-        val emojiButtons = listOf(
-            dialogView.findViewById<Button>(R.id.mood_happy),
-            dialogView.findViewById<Button>(R.id.mood_excited),
-            dialogView.findViewById<Button>(R.id.mood_neutral),
-            dialogView.findViewById<Button>(R.id.mood_sad),
-            dialogView.findViewById<Button>(R.id.mood_angry)
+        val emojiButtons: List<androidx.cardview.widget.CardView> = listOf(
+            dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.mood_happy),
+            dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.mood_excited),
+            dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.mood_neutral),
+            dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.mood_sad),
+            dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.mood_angry)
         )
         val noteEditText = dialogView.findViewById<EditText>(R.id.mood_note_edit)
         
         var selectedMoodLevel = 3 // Default to neutral
         
-        // Setup emoji buttons
-        emojiButtons.forEachIndexed { index, button ->
-            button.text = moodEmojis[index]
-            button.setOnClickListener {
-                // Reset all buttons
+        // Setup emoji cards
+        emojiButtons.forEachIndexed { index, cardView ->
+            cardView.setOnClickListener {
+                // Reset all cards
                 emojiButtons.forEach { it.isSelected = false }
-                // Select current button
-                button.isSelected = true
+                // Select current card
+                cardView.isSelected = true
                 selectedMoodLevel = moodLevels[index]
             }
         }
@@ -158,53 +174,55 @@ class MoodJournalFragment : Fragment() {
             .show()
     }
     
-    private fun showEditMoodDialog(moodEntry: MoodEntry) {
-        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_mood, null)
-        val emojiButtons = listOf(
-            dialogView.findViewById<Button>(R.id.mood_happy),
-            dialogView.findViewById<Button>(R.id.mood_excited),
-            dialogView.findViewById<Button>(R.id.mood_neutral),
-            dialogView.findViewById<Button>(R.id.mood_sad),
-            dialogView.findViewById<Button>(R.id.mood_angry)
-        )
-        val noteEditText = dialogView.findViewById<EditText>(R.id.mood_note_edit)
+    private fun showMoodEntryDetails(moodEntry: MoodEntry) {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_mood_entry_details, null)
         
-        // Pre-fill with existing values
-        noteEditText.setText(moodEntry.note)
-        val moodIndex = moodLevels.indexOf(moodEntry.moodLevel)
-        if (moodIndex >= 0) {
-            emojiButtons[moodIndex].isSelected = true
+        // Get views
+        val emojiText = dialogView.findViewById<TextView>(R.id.mood_emoji)
+        val descriptionText = dialogView.findViewById<TextView>(R.id.mood_description)
+        val levelText = dialogView.findViewById<TextView>(R.id.mood_level)
+        val dateText = dialogView.findViewById<TextView>(R.id.mood_date)
+        val timeText = dialogView.findViewById<TextView>(R.id.mood_time)
+        val noteText = dialogView.findViewById<TextView>(R.id.mood_note)
+        val noteSection = dialogView.findViewById<LinearLayout>(R.id.note_section)
+        val noNoteMessage = dialogView.findViewById<TextView>(R.id.no_note_message)
+        
+        // Set mood data
+        emojiText.text = moodEntry.emoji
+        descriptionText.text = moodEntry.getMoodDescription()
+        levelText.text = "${moodEntry.moodLevel}/5"
+        
+        // Set date and time
+        val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        dateText.text = dateFormat.format(moodEntry.dateTime)
+        timeText.text = timeFormat.format(moodEntry.dateTime)
+        
+        // Set note or show no note message
+        if (moodEntry.note.isNotEmpty()) {
+            noteText.text = moodEntry.note
+            noteSection.visibility = View.VISIBLE
+            noNoteMessage.visibility = View.GONE
+        } else {
+            noteSection.visibility = View.GONE
+            noNoteMessage.visibility = View.VISIBLE
         }
         
-        var selectedMoodLevel = moodEntry.moodLevel
-        
-        // Setup emoji buttons
-        emojiButtons.forEachIndexed { index, button ->
-            button.text = moodEmojis[index]
-            button.setOnClickListener {
-                // Reset all buttons
-                emojiButtons.forEach { it.isSelected = false }
-                // Select current button
-                button.isSelected = true
-                selectedMoodLevel = moodLevels[index]
-            }
-        }
-        
+        // Show dialog
         AlertDialog.Builder(requireContext())
-            .setTitle("Edit Mood Entry")
+            .setTitle("Mood Entry Details")
             .setView(dialogView)
-            .setPositiveButton("Save") { _: android.content.DialogInterface, _: Int ->
-                val note = noteEditText.text.toString().trim()
-                val updatedMoodEntry = moodEntry.copy(
-                    emoji = moodEmojis[selectedMoodLevel - 1],
-                    note = note,
-                    moodLevel = selectedMoodLevel
-                )
-                // Note: We would need to implement updateMoodEntry in DataManager
-                loadMoodEntries()
+            .setPositiveButton("Edit") { _, _ ->
+                openMoodUpdateActivity(moodEntry)
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton("Close", null)
             .show()
+    }
+    
+    private fun openMoodUpdateActivity(moodEntry: MoodEntry) {
+        val intent = Intent(requireContext(), com.example.dodaily.MoodUpdateActivity::class.java)
+        intent.putExtra("mood_entry", moodEntry)
+        startActivity(intent)
     }
     
     private fun showMoodChart() {
@@ -264,5 +282,33 @@ class MoodJournalFragment : Fragment() {
         cal2.time = date2
         return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+    
+    private fun showDeleteConfirmationDialog(moodEntry: MoodEntry) {
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Mood Entry")
+            .setMessage("Are you sure you want to delete this mood entry?\n\n${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n${SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(moodEntry.dateTime)}")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteMoodEntry(moodEntry)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun deleteMoodEntry(moodEntry: MoodEntry) {
+        // Get all mood entries
+        val allMoodEntries = dataManager.loadMoodEntries().toMutableList()
+        
+        // Remove the specific mood entry
+        val updatedEntries = allMoodEntries.filter { it.id != moodEntry.id }
+        
+        // Save updated entries
+        dataManager.saveMoodEntries(updatedEntries)
+        
+        // Refresh the UI
+        loadMoodEntries()
+        
+        // Show confirmation
+        android.widget.Toast.makeText(requireContext(), "Mood entry deleted", android.widget.Toast.LENGTH_SHORT).show()
     }
 }

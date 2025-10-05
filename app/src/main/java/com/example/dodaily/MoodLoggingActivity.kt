@@ -26,13 +26,10 @@ class MoodLoggingActivity : AppCompatActivity() {
     private lateinit var timeDisplay: TextView
     private lateinit var hourDisplay: TextView
     private lateinit var minuteDisplay: TextView
-    private lateinit var amButton: TextView
-    private lateinit var pmButton: TextView
     private lateinit var calendarWidget: View
     private lateinit var calendarGrid: LinearLayout
     private var selectedDateIndex: Int = 0
     private var dateItems: MutableList<TextView> = mutableListOf()
-    private var isAM: Boolean = true
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,8 +70,6 @@ class MoodLoggingActivity : AppCompatActivity() {
         timeDisplay = findViewById(R.id.time_display)
         hourDisplay = findViewById(R.id.hour_display)
         minuteDisplay = findViewById(R.id.minute_display)
-        amButton = findViewById(R.id.am_button)
-        pmButton = findViewById(R.id.pm_button)
         calendarWidget = findViewById(R.id.calendar_widget)
         calendarGrid = calendarWidget.findViewById(R.id.calendar_grid)
     }
@@ -108,16 +103,16 @@ class MoodLoggingActivity : AppCompatActivity() {
     private fun setupTimeSelection() {
         // Hour controls
         findViewById<View>(R.id.decrease_hour_button).setOnClickListener {
-            val currentHour = selectedTime.get(Calendar.HOUR)
-            val newHour = if (currentHour == 1) 12 else currentHour - 1
-            selectedTime.set(Calendar.HOUR, newHour)
+            val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
+            val newHour = if (currentHour == 0) 23 else currentHour - 1
+            selectedTime.set(Calendar.HOUR_OF_DAY, newHour)
             updateTimeDisplays()
         }
         
         findViewById<View>(R.id.increase_hour_button).setOnClickListener {
-            val currentHour = selectedTime.get(Calendar.HOUR)
-            val newHour = if (currentHour == 12) 1 else currentHour + 1
-            selectedTime.set(Calendar.HOUR, newHour)
+            val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
+            val newHour = if (currentHour == 23) 0 else currentHour + 1
+            selectedTime.set(Calendar.HOUR_OF_DAY, newHour)
             updateTimeDisplays()
         }
         
@@ -136,20 +131,6 @@ class MoodLoggingActivity : AppCompatActivity() {
             updateTimeDisplays()
         }
         
-        // AM/PM toggle
-        amButton.setOnClickListener {
-            isAM = true
-            selectedTime.set(Calendar.AM_PM, Calendar.AM)
-            updateAMPMButtons()
-            updateTimeDisplays()
-        }
-        
-        pmButton.setOnClickListener {
-            isAM = false
-            selectedTime.set(Calendar.AM_PM, Calendar.PM)
-            updateAMPMButtons()
-            updateTimeDisplays()
-        }
         
         // Calendar navigation
         calendarWidget.findViewById<View>(R.id.prev_month_button).setOnClickListener {
@@ -164,9 +145,6 @@ class MoodLoggingActivity : AppCompatActivity() {
             setupCalendar()
         }
         
-        // Initialize AM/PM state
-        isAM = selectedTime.get(Calendar.AM_PM) == Calendar.AM
-        updateAMPMButtons()
     }
     
     private fun setupSaveButton() {
@@ -182,31 +160,17 @@ class MoodLoggingActivity : AppCompatActivity() {
     }
     
     private fun updateTimeDisplay() {
-        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         timeDisplay.text = timeFormat.format(selectedTime.time)
     }
     
     private fun updateTimeDisplays() {
-        val hour = selectedTime.get(Calendar.HOUR)
+        val hour = selectedTime.get(Calendar.HOUR_OF_DAY)
         val minute = selectedTime.get(Calendar.MINUTE)
         
-        hourDisplay.text = hour.toString()
+        hourDisplay.text = String.format("%02d", hour)
         minuteDisplay.text = String.format("%02d", minute)
         updateTimeDisplay()
-    }
-    
-    private fun updateAMPMButtons() {
-        if (isAM) {
-            amButton.setTextColor(resources.getColor(R.color.white, null))
-            amButton.setBackgroundResource(R.drawable.am_pm_selected_background)
-            pmButton.setTextColor(resources.getColor(R.color.text_primary, null))
-            pmButton.setBackgroundResource(R.drawable.am_pm_unselected_background)
-        } else {
-            amButton.setTextColor(resources.getColor(R.color.text_primary, null))
-            amButton.setBackgroundResource(R.drawable.am_pm_unselected_background)
-            pmButton.setTextColor(resources.getColor(R.color.white, null))
-            pmButton.setBackgroundResource(R.drawable.am_pm_selected_background)
-        }
     }
     
     private fun updateMonthYearDisplay() {

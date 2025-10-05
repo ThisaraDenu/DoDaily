@@ -2,12 +2,17 @@ package com.example.dodaily
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -46,6 +51,8 @@ class MoodPageActivity : AppCompatActivity() {
     private lateinit var chartPlaceholder: TextView
     private lateinit var chartMessage: TextView
     private lateinit var chartTimeRange: TextView
+    
+    // Mood statistics components removed
     
     // Calendar components
     private lateinit var prevMonthButton: ImageButton
@@ -103,6 +110,16 @@ class MoodPageActivity : AppCompatActivity() {
         updateTodayChart()
     }
     
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == REQUEST_UPDATE_MOOD && resultCode == RESULT_OK) {
+            // Refresh data after mood update
+            loadMoodData()
+            updateTodayChart()
+        }
+    }
+    
     private fun initializeViews() {
         addMoodButton = findViewById(R.id.add_mood_button)
         backButton = findViewById(R.id.back_button)
@@ -124,6 +141,8 @@ class MoodPageActivity : AppCompatActivity() {
         chartMessage = findViewById(R.id.chart_message)
         chartTimeRange = findViewById(R.id.chart_time_range)
         
+        // Mood statistics components removed
+        
         // Initialize calendar components
         prevMonthButton = findViewById(R.id.prev_month_button)
         nextMonthButton = findViewById(R.id.next_month_button)
@@ -135,13 +154,30 @@ class MoodPageActivity : AppCompatActivity() {
     }
     
     private fun setupRecyclerView() {
-        moodAdapter = MoodEntriesAdapter(moodEntries) { moodEntry ->
-            // Handle mood entry click - could open edit dialog
-            showMoodEntryDetails(moodEntry)
-        }
+        moodAdapter = MoodEntriesAdapter(
+            moodEntries = moodEntries,
+            onMoodEntryClick = { moodEntry ->
+                // Collapse any expanded items when viewing details
+                moodAdapter.collapseAll()
+                showMoodEntryDetails(moodEntry)
+            },
+            onEditClick = { moodEntry ->
+                openMoodUpdateActivity(moodEntry)
+            },
+            onDeleteClick = { moodEntry ->
+                showDeleteConfirmationDialog(moodEntry)
+            }
+        )
         
         moodEntriesRecycler.layoutManager = LinearLayoutManager(this)
         moodEntriesRecycler.adapter = moodAdapter
+        
+        // Add click listener to collapse expanded items when tapping outside
+        moodEntriesRecycler.setOnClickListener {
+            if (moodAdapter.hasExpandedItem()) {
+                moodAdapter.collapseAll()
+            }
+        }
     }
     
     private fun setupClickListeners() {
@@ -203,8 +239,11 @@ class MoodPageActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_hydration -> {
-                    // TODO: Implement hydration functionality
-                    Toast.makeText(this, "Hydration feature coming soon!", Toast.LENGTH_SHORT).show()
+                    // Navigate to HydrationSettingsActivity
+                    val intent = Intent(this, HydrationSettingsActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    startActivity(intent)
+                    finish()
                     true
                 }
                 R.id.nav_settings -> {
@@ -372,37 +411,48 @@ class MoodPageActivity : AppCompatActivity() {
         // Sort entries by time
         val sortedEntries = moodEntries.sortedBy { it.dateTime }
         
-        // Create time slots (6 AM to 11 PM = 17 hours)
-        val timeSlots = mutableListOf<String>()
-        val hourLabels = mutableListOf<String>()
-        
-        for (hour in 6..23) {
-            timeSlots.add(String.format("%02d:00", hour))
-            hourLabels.add(if (hour <= 12) "${hour}AM" else "${hour-12}PM")
-        }
-        
-        // Create chart container
-        val chartLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.BOTTOM
+        // Create main chart container
+        val mainChartContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
         }
         
-        // Create hour labels container
-        val hourLabelsLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
+        // Create chart title with mood emoji
+        val chartTitle = TextView(this).apply {
+            text = "📊 Today's Mood Journey"
+            textSize = 16f
+            setTextColor(getColor(R.color.text_primary))
+            gravity = android.view.Gravity.CENTER
+            setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            )
+            ).apply {
+                setMargins(0, 0, 0, 16)
+            }
         }
         
-        // Draw chart bars for each hour
-        for (i in timeSlots.indices) {
-            val hour = i + 6
+        // Create chart area
+        val chartArea = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.BOTTOM
+            background = getDrawable(R.drawable.chart_background)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                530 // Maximum possible height within 350dp card
+            ).apply {
+                setMargins(0, 0, 0, 8)
+            }
+        }
+        
+        // Create time slots (6 AM to 11 PM = 18 hours, every 2 hours)
+        val timeSlots = listOf(6, 8, 10, 12, 14, 16, 18, 20, 22)
+        
+        // Draw chart bars for each time slot
+        for (hour in timeSlots) {
             val hourEntries = sortedEntries.filter { 
                 val cal = Calendar.getInstance().apply { time = it.dateTime }
                 cal.get(Calendar.HOUR_OF_DAY) == hour
@@ -411,48 +461,55 @@ class MoodPageActivity : AppCompatActivity() {
             // Create bar container
             val barContainer = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                gravity = android.view.Gravity.CENTER
+                gravity = android.view.Gravity.BOTTOM
                 layoutParams = LinearLayout.LayoutParams(
                     0,
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     1f
-                )
+                ).apply {
+                    setMargins(2, 0, 2, 0)
+                }
             }
             
-            // Calculate bar height based on mood entries
-            val barHeight = if (hourEntries.isNotEmpty()) {
+            // Calculate bar height and color
+            val (barHeight, barColor, moodText) = if (hourEntries.isNotEmpty()) {
                 val avgMood = hourEntries.map { it.moodLevel }.average()
-                (avgMood / 5.0 * 200).toInt() // Scale to 200dp max height
+                val height = (avgMood / 5.0 * 280).toInt() + 35 // Scale to 280dp max + 35dp base
+                val color = when {
+                    avgMood >= 4.5 -> R.color.mood_very_happy // Happy (5)
+                    avgMood >= 3.5 -> R.color.mood_happy // Excited (4)
+                    avgMood >= 2.5 -> R.color.mood_neutral // Neutral (3)
+                    avgMood >= 1.5 -> R.color.mood_sad // Sad (2)
+                    else -> R.color.mood_very_sad // Angry (1)
+                }
+                val moodDesc = when {
+                    avgMood >= 4.5 -> "😊" // Happy
+                    avgMood >= 3.5 -> "🤩" // Excited
+                    avgMood >= 2.5 -> "😐" // Neutral
+                    avgMood >= 1.5 -> "😢" // Sad
+                    else -> "😠" // Angry
+                }
+                Triple(height, color, moodDesc)
             } else {
-                20 // Minimum height for empty slots
+                Triple(20, R.color.background_color, "⚪")
             }
             
-            // Create mood bar
-            val moodBar = View(this).apply {
+            // Create mood bar with rounded corners
+            val moodBar = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                background = getDrawable(R.drawable.mood_bar_background)
+                setBackgroundColor(getColor(barColor))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     barHeight
                 )
-                background = when {
-                    hourEntries.isEmpty() -> getDrawable(R.color.background_color)
-                    else -> {
-                        val avgMood = hourEntries.map { it.moodLevel }.average()
-                        when {
-                            avgMood >= 4.5 -> getDrawable(R.color.mood_very_happy)
-                            avgMood >= 3.5 -> getDrawable(R.color.mood_happy)
-                            avgMood >= 2.5 -> getDrawable(R.color.mood_neutral)
-                            avgMood >= 1.5 -> getDrawable(R.color.mood_sad)
-                            else -> getDrawable(R.color.mood_very_sad)
-                        }
-                    }
-                }
             }
             
-            // Create hour label
-            val hourLabel = TextView(this).apply {
-                text = if (hour <= 12) "${hour}AM" else "${hour-12}PM"
-                textSize = 8f
-                setTextColor(getColor(R.color.text_secondary))
+            // Add mood emoji to bar
+            val moodEmoji = TextView(this).apply {
+                text = moodText
+                textSize = 16f
                 gravity = android.view.Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -460,14 +517,91 @@ class MoodPageActivity : AppCompatActivity() {
                 )
             }
             
+            // Add entry count for all bars
+            val entryCount = TextView(this).apply {
+                text = "${hourEntries.size}"
+                textSize = 10f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            moodBar.addView(entryCount)
+            
+            moodBar.addView(moodEmoji)
+            
+            // Create hour label
+            val hourLabel = TextView(this).apply {
+                text = if (hour == 12) "12PM" else if (hour < 12) "${hour}AM" else "${hour-12}PM"
+                textSize = 10f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    setMargins(0, 4, 0, 0)
+                }
+            }
+            
             barContainer.addView(moodBar)
             barContainer.addView(hourLabel)
-            chartLayout.addView(barContainer)
+            chartArea.addView(barContainer)
         }
         
+        // Create mood scale
+        val moodScale = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        
+        val scaleLabels = listOf("😠", "😢", "😐", "🤩", "😊")
+        val scaleTexts = listOf("Angry", "Sad", "Neutral", "Excited", "Happy")
+        
+        for (i in scaleLabels.indices) {
+            val scaleItem = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            }
+            
+            val emoji = TextView(this).apply {
+                text = scaleLabels[i]
+                textSize = 14f
+                gravity = android.view.Gravity.CENTER
+            }
+            
+            val label = TextView(this).apply {
+                text = scaleTexts[i]
+                textSize = 8f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = android.view.Gravity.CENTER
+            }
+            
+            scaleItem.addView(emoji)
+            scaleItem.addView(label)
+            moodScale.addView(scaleItem)
+        }
+        
+        // Add all components to main container
+        mainChartContainer.addView(chartTitle)
+        mainChartContainer.addView(chartArea)
+        mainChartContainer.addView(moodScale)
+        
         // Add chart to container
-        moodChartContainer.addView(chartLayout)
+        moodChartContainer.addView(mainChartContainer)
     }
+    
     
     private fun clearChartData() {
         // Remove all views except the placeholder and message
@@ -496,15 +630,47 @@ class MoodPageActivity : AppCompatActivity() {
     }
     
     private fun showMoodEntryDetails(moodEntry: MoodEntry) {
-        // Show mood entry details or edit dialog
-        // For now, just show a simple message
-        val dateFormat = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm", Locale.getDefault())
-        val dateString = dateFormat.format(moodEntry.dateTime)
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_mood_entry_details, null)
         
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Mood Entry")
-            .setMessage("${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n\n$dateString\n\n${moodEntry.note}")
-            .setPositiveButton("OK", null)
+        // Get views
+        val emojiText = dialogView.findViewById<TextView>(R.id.mood_emoji)
+        val descriptionText = dialogView.findViewById<TextView>(R.id.mood_description)
+        val levelText = dialogView.findViewById<TextView>(R.id.mood_level)
+        val dateText = dialogView.findViewById<TextView>(R.id.mood_date)
+        val timeText = dialogView.findViewById<TextView>(R.id.mood_time)
+        val noteText = dialogView.findViewById<TextView>(R.id.mood_note)
+        val noteSection = dialogView.findViewById<LinearLayout>(R.id.note_section)
+        val noNoteMessage = dialogView.findViewById<TextView>(R.id.no_note_message)
+        
+        // Set mood data
+        emojiText.text = moodEntry.emoji
+        descriptionText.text = moodEntry.getMoodDescription()
+        levelText.text = "${moodEntry.moodLevel}/5"
+        
+        // Set date and time
+        val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        dateText.text = dateFormat.format(moodEntry.dateTime)
+        timeText.text = timeFormat.format(moodEntry.dateTime)
+        
+        // Set note or show no note message
+        if (moodEntry.note.isNotEmpty()) {
+            noteText.text = moodEntry.note
+            noteSection.visibility = View.VISIBLE
+            noNoteMessage.visibility = View.GONE
+        } else {
+            noteSection.visibility = View.GONE
+            noNoteMessage.visibility = View.VISIBLE
+        }
+        
+        // Show dialog
+        AlertDialog.Builder(this)
+            .setTitle("Mood Entry Details")
+            .setView(dialogView)
+            .setPositiveButton("Edit") { _, _ ->
+                openMoodUpdateActivity(moodEntry)
+            }
+            .setNegativeButton("Close", null)
             .show()
     }
     
@@ -670,6 +836,45 @@ class MoodPageActivity : AppCompatActivity() {
             chartMessage.text = "No mood data for selected date"
             chartTimeRange.text = "Selected Date"
         }
+    }
+    
+    private fun openMoodUpdateActivity(moodEntry: MoodEntry) {
+        val intent = Intent(this, com.example.dodaily.MoodUpdateActivity::class.java)
+        intent.putExtra("mood_entry", moodEntry)
+        startActivityForResult(intent, REQUEST_UPDATE_MOOD)
+    }
+    
+    companion object {
+        private const val REQUEST_UPDATE_MOOD = 1001
+    }
+    
+    private fun showDeleteConfirmationDialog(moodEntry: MoodEntry) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Mood Entry")
+            .setMessage("Are you sure you want to delete this mood entry?\n\n${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n${SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(moodEntry.dateTime)}")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteMoodEntry(moodEntry)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun deleteMoodEntry(moodEntry: MoodEntry) {
+        // Get all mood entries
+        val allMoodEntries = dataManager.loadMoodEntries().toMutableList()
+        
+        // Remove the specific mood entry
+        val updatedEntries = allMoodEntries.filter { it.id != moodEntry.id }
+        
+        // Save updated entries
+        dataManager.saveMoodEntries(updatedEntries)
+        
+        // Refresh the UI
+        loadMoodData()
+        updateTodayChart()
+        
+        // Show confirmation
+        Toast.makeText(this, "Mood entry deleted", Toast.LENGTH_SHORT).show()
     }
     
 }

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/background"
-    tools:context=".MoodActivity">
+    tools:context=".MoodUpdateActivity">
 
     <!-- Header -->
     <LinearLayout
@@ -31,7 +31,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Mood"
+            android:text="Edit Mood"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/text_primary"
@@ -151,7 +151,8 @@
 
                                 <TextView
                                     android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content" android:text="🤩"
+                                    android:layout_height="wrap_content"
+                                    android:text="🤩"
                                     android:textSize="32sp" />
 
                                 <TextView
@@ -590,12 +591,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Save Button -->
+        <!-- Update Button -->
         <Button
-            android:id="@+id/save_button"
+            android:id="@+id/update_button"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Save"
+            android:text="Update Mood"
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/white"

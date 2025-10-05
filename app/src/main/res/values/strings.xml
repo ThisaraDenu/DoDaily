@@ -39,12 +39,12 @@
     <string name="hydration_description">Get reminded to drink water at regular intervals</string>
     <string name="enable_reminders">Enable Reminders</string>
     <string name="reminder_interval">Reminder Interval</string>
-    
+
     <!-- Settings Sections -->
     <string name="profile_section">PROFILE</string>
     <string name="preferences_section">PREFERENCES</string>
     <string name="advanced_section">ADVANCED</string>
-    
+
     <!-- Settings Items -->
     <string name="profile">Profile</string>
     <string name="profile_description">View and edit your profile</string>

@@ -13,8 +13,16 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal">
+
+        <!-- Main Content -->
+        <LinearLayout
+            android:id="@+id/main_content"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp">
 
         <!-- Header Row -->
         <LinearLayout
@@ -56,15 +64,13 @@
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/mood_level"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="4/5"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:background="@drawable/mood_level_background"
+            <ImageButton
+                android:id="@+id/view_button"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_eye"
+                android:background="@drawable/icon_button_background"
+                android:contentDescription="View mood details"
                 android:padding="8dp" />
 
         </LinearLayout>
@@ -80,6 +86,42 @@
             android:layout_marginTop="8dp"
             android:visibility="gone"
             tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Action Buttons (Initially Hidden) -->
+        <LinearLayout
+            android:id="@+id/action_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/white"
+            android:visibility="gone">
+
+            <!-- Edit Button -->
+            <ImageButton
+                android:id="@+id/edit_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_edit"
+                android:background="@drawable/icon_button_background"
+                android:contentDescription="Edit mood entry"
+                android:layout_margin="8dp"
+                app:tint="@color/primary_green" />
+
+            <!-- Delete Button -->
+            <ImageButton
+                android:id="@+id/delete_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_delete"
+                android:background="@drawable/icon_button_background"
+                android:contentDescription="Delete mood entry"
+                android:layout_margin="8dp"
+                app:tint="@color/error_red" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -269,6 +269,18 @@ class DataManager(private val context: Context) {
     }
     
     /**
+     * Update an existing mood entry
+     */
+    fun updateMoodEntry(updatedMoodEntry: MoodEntry) {
+        val moodEntries = loadMoodEntries().toMutableList()
+        val index = moodEntries.indexOfFirst { it.id == updatedMoodEntry.id }
+        if (index != -1) {
+            moodEntries[index] = updatedMoodEntry
+            saveMoodEntries(moodEntries)
+        }
+    }
+    
+    /**
      * Get mood entries for a specific date
      */
     fun getMoodEntriesForDate(date: Date): List<MoodEntry> {
@@ -351,5 +363,71 @@ class DataManager(private val context: Context) {
         cal2.time = date2
         return cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR) &&
                 cal1.get(java.util.Calendar.DAY_OF_YEAR) == cal2.get(java.util.Calendar.DAY_OF_YEAR)
+    }
+    
+    // Hydration Settings Methods
+    fun saveDailyHydrationGoal(goal: Int) {
+        prefs.edit().putInt("daily_hydration_goal", goal).apply()
+    }
+    
+    fun getDailyHydrationGoal(): Int {
+        return prefs.getInt("daily_hydration_goal", 2500) // Default 2500ml
+    }
+    
+    fun saveHydrationRemindersEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("hydration_reminders_enabled", enabled).apply()
+    }
+    
+    fun areHydrationRemindersEnabled(): Boolean {
+        return prefs.getBoolean("hydration_reminders_enabled", true)
+    }
+    
+    fun saveHydrationReminderSound(sound: String) {
+        prefs.edit().putString("hydration_reminder_sound", sound).apply()
+    }
+    
+    fun getHydrationReminderSound(): String {
+        return prefs.getString("hydration_reminder_sound", "Default") ?: "Default"
+    }
+    
+    fun saveHydrationReminders(reminders: List<String>) {
+        val remindersJson = reminders.joinToString(",")
+        prefs.edit().putString("hydration_reminders", remindersJson).apply()
+    }
+    
+    fun getHydrationReminders(): List<String> {
+        val remindersJson = prefs.getString("hydration_reminders", "") ?: ""
+        return if (remindersJson.isEmpty()) {
+            listOf("8:0:AM", "12:0:PM", "4:0:PM") // Default reminders
+        } else {
+            remindersJson.split(",")
+        }
+    }
+    
+    // Hydration Schedule Methods
+    fun saveHydrationSchedules(schedules: List<com.example.dodaily.model.HydrationSchedule>) {
+        val schedulesJson = schedules.joinToString("|") { schedule ->
+            "${schedule.id},${schedule.time},${schedule.description},${schedule.isCompleted}"
+        }
+        prefs.edit().putString("hydration_schedules", schedulesJson).apply()
+    }
+    
+    fun getHydrationSchedules(): List<com.example.dodaily.model.HydrationSchedule> {
+        val schedulesJson = prefs.getString("hydration_schedules", "") ?: ""
+        return if (schedulesJson.isEmpty()) {
+            emptyList()
+        } else {
+            schedulesJson.split("|").mapNotNull { scheduleString ->
+                val parts = scheduleString.split(",")
+                if (parts.size == 4) {
+                    com.example.dodaily.model.HydrationSchedule(
+                        id = parts[0],
+                        time = parts[1],
+                        description = parts[2],
+                        isCompleted = parts[3].toBoolean()
+                    )
+                } else null
+            }
+        }
     }
 }

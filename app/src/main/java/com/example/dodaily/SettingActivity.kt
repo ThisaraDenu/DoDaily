@@ -46,8 +46,11 @@ class SettingActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_hydration -> {
-                    // Handle hydration navigation
-                    Toast.makeText(this, "Hydration feature coming soon!", Toast.LENGTH_SHORT).show()
+                    // Navigate to HydrationSettingsActivity
+                    val intent = Intent(this, HydrationSettingsActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    startActivity(intent)
+                    finish()
                     true
                 }
                 R.id.nav_settings -> {

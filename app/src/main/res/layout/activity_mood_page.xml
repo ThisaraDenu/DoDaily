@@ -203,9 +203,9 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/mood_entries_recycler"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
+                    android:layout_height="376dp"
                     android:background="@color/white"
+                    android:nestedScrollingEnabled="false"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp" />
 
@@ -386,7 +386,6 @@
                             android:layout_height="0dp"
                             android:layout_weight="1"
                             android:orientation="vertical"
-                            android:gravity="center"
                             android:background="@color/background_color"
                             android:padding="16dp">
 
@@ -397,7 +396,8 @@
                                 android:layout_height="wrap_content"
                                 android:text="📈"
                                 android:textSize="48sp"
-                                android:layout_marginBottom="8dp" />
+                                android:layout_marginBottom="8dp"
+                                android:layout_gravity="center" />
 
                             <TextView
                                 android:id="@+id/chart_message"
@@ -406,9 +406,11 @@
                                 android:text="No mood data for today yet"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="14sp"
-                                android:gravity="center" />
+                                android:gravity="center"
+                                android:layout_gravity="center" />
 
                         </LinearLayout>
+
 
                         <!-- Chart Legend -->
                         <LinearLayout

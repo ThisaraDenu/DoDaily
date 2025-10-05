@@ -2,10 +2,14 @@ package com.example.dodaily
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -62,10 +66,20 @@ class MoodActivity : AppCompatActivity() {
     }
     
     private fun setupRecyclerView() {
-        moodAdapter = MoodEntriesAdapter(moodEntries) { moodEntry ->
-            // Handle mood entry click - could open edit dialog
-            showMoodEntryDetails(moodEntry)
-        }
+        moodAdapter = MoodEntriesAdapter(
+            moodEntries = moodEntries,
+            onMoodEntryClick = { moodEntry ->
+                // Handle mood entry click - show details
+                showMoodEntryDetails(moodEntry)
+            },
+            onEditClick = { moodEntry ->
+                openMoodUpdateActivity(moodEntry)
+            },
+            onDeleteClick = { moodEntry ->
+                // Handle delete click - show confirmation dialog
+                showDeleteConfirmationDialog(moodEntry)
+            }
+        )
         
         moodEntriesRecycler.layoutManager = LinearLayoutManager(this)
         moodEntriesRecycler.adapter = moodAdapter
@@ -112,15 +126,47 @@ class MoodActivity : AppCompatActivity() {
     }
     
     private fun showMoodEntryDetails(moodEntry: MoodEntry) {
-        // Show mood entry details or edit dialog
-        // For now, just show a simple message
-        val dateFormat = SimpleDateFormat("MMM dd, yyyy 'at' HH:mm", Locale.getDefault())
-        val dateString = dateFormat.format(moodEntry.dateTime)
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_mood_entry_details, null)
         
+        // Get views
+        val emojiText = dialogView.findViewById<TextView>(R.id.mood_emoji)
+        val descriptionText = dialogView.findViewById<TextView>(R.id.mood_description)
+        val levelText = dialogView.findViewById<TextView>(R.id.mood_level)
+        val dateText = dialogView.findViewById<TextView>(R.id.mood_date)
+        val timeText = dialogView.findViewById<TextView>(R.id.mood_time)
+        val noteText = dialogView.findViewById<TextView>(R.id.mood_note)
+        val noteSection = dialogView.findViewById<LinearLayout>(R.id.note_section)
+        val noNoteMessage = dialogView.findViewById<TextView>(R.id.no_note_message)
+        
+        // Set mood data
+        emojiText.text = moodEntry.emoji
+        descriptionText.text = moodEntry.getMoodDescription()
+        levelText.text = "${moodEntry.moodLevel}/5"
+        
+        // Set date and time
+        val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        dateText.text = dateFormat.format(moodEntry.dateTime)
+        timeText.text = timeFormat.format(moodEntry.dateTime)
+        
+        // Set note or show no note message
+        if (moodEntry.note.isNotEmpty()) {
+            noteText.text = moodEntry.note
+            noteSection.visibility = View.VISIBLE
+            noNoteMessage.visibility = View.GONE
+        } else {
+            noteSection.visibility = View.GONE
+            noNoteMessage.visibility = View.VISIBLE
+        }
+        
+        // Show dialog
         androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Mood Entry")
-            .setMessage("${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n\n$dateString\n\n${moodEntry.note}")
-            .setPositiveButton("OK", null)
+            .setTitle("Mood Entry Details")
+            .setView(dialogView)
+            .setPositiveButton("Edit") { _, _ ->
+                openMoodUpdateActivity(moodEntry)
+            }
+            .setNegativeButton("Close", null)
             .show()
     }
     
@@ -128,5 +174,52 @@ class MoodActivity : AppCompatActivity() {
         super.onResume()
         // Refresh mood data when returning from MoodLoggingActivity
         loadMoodData()
+    }
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == REQUEST_UPDATE_MOOD && resultCode == RESULT_OK) {
+            // Refresh data after mood update
+            loadMoodData()
+        }
+    }
+    
+    private fun openMoodUpdateActivity(moodEntry: MoodEntry) {
+        val intent = Intent(this, com.example.dodaily.MoodUpdateActivity::class.java)
+        intent.putExtra("mood_entry", moodEntry)
+        startActivityForResult(intent, REQUEST_UPDATE_MOOD)
+    }
+    
+    companion object {
+        private const val REQUEST_UPDATE_MOOD = 1001
+    }
+    
+    private fun showDeleteConfirmationDialog(moodEntry: MoodEntry) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Delete Mood Entry")
+            .setMessage("Are you sure you want to delete this mood entry?\n\n${moodEntry.emoji} ${moodEntry.getMoodDescription()}\n${SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(moodEntry.dateTime)}")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteMoodEntry(moodEntry)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun deleteMoodEntry(moodEntry: MoodEntry) {
+        // Get all mood entries
+        val allMoodEntries = dataManager.loadMoodEntries().toMutableList()
+        
+        // Remove the specific mood entry
+        val updatedEntries = allMoodEntries.filter { it.id != moodEntry.id }
+        
+        // Save updated entries
+        dataManager.saveMoodEntries(updatedEntries)
+        
+        // Refresh the UI
+        loadMoodData()
+        
+        // Show confirmation
+        android.widget.Toast.makeText(this, "Mood entry deleted", android.widget.Toast.LENGTH_SHORT).show()
     }
 }
