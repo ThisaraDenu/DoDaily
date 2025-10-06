@@ -1,17 +1,17 @@
 package com.example.dodaily
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.LinearLayout
+import android.widget.Button
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.dodaily.adapters.TimePickerAdapter
 import com.example.dodaily.data.DataManager
 import com.example.dodaily.model.MoodEntry
-import java.text.SimpleDateFormat
 import java.util.*
 
 class MoodLoggingActivity : AppCompatActivity() {
@@ -21,15 +21,16 @@ class MoodLoggingActivity : AppCompatActivity() {
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedTime: Calendar = Calendar.getInstance()
     
-    private lateinit var moodCards: List<CardView>
-    private lateinit var monthYearText: TextView
+    private lateinit var moodButtons: List<Button>
     private lateinit var timeDisplay: TextView
-    private lateinit var hourDisplay: TextView
-    private lateinit var minuteDisplay: TextView
-    private lateinit var calendarWidget: View
-    private lateinit var calendarGrid: LinearLayout
-    private var selectedDateIndex: Int = 0
-    private var dateItems: MutableList<TextView> = mutableListOf()
+    private lateinit var hourPicker: RecyclerView
+    private lateinit var ampmPicker: RecyclerView
+    private lateinit var hourAdapter: TimePickerAdapter
+    private lateinit var ampmAdapter: TimePickerAdapter
+    
+    // Available times for mood tracking (6AM to 12AM in 2-hour intervals)
+    private val availableHours = listOf("6", "8", "10", "12", "2", "4", "6", "8", "10", "12")
+    private val ampmOptions = listOf("AM", "PM")
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,21 +45,25 @@ class MoodLoggingActivity : AppCompatActivity() {
         // Initialize DataManager
         dataManager = DataManager(this)
         
+        // Get selected date from intent
+        val selectedDateMillis = intent.getLongExtra("selected_date", -1L)
+        if (selectedDateMillis != -1L) {
+            selectedDate.timeInMillis = selectedDateMillis
+        }
+        
         // Initialize views
         initializeViews()
         setupMoodSelection()
         setupTimeSelection()
         setupSaveButton()
         setupNavigation()
-        setupCalendar()
         
         // Set initial time display
         updateTimeDisplays()
-        updateMonthYearDisplay()
     }
     
     private fun initializeViews() {
-        moodCards = listOf(
+        moodButtons = listOf(
             findViewById(R.id.mood_happy),
             findViewById(R.id.mood_excited),
             findViewById(R.id.mood_neutral),
@@ -66,17 +71,18 @@ class MoodLoggingActivity : AppCompatActivity() {
             findViewById(R.id.mood_angry)
         )
         
-        monthYearText = findViewById(R.id.month_year_text)
         timeDisplay = findViewById(R.id.time_display)
-        hourDisplay = findViewById(R.id.hour_display)
-        minuteDisplay = findViewById(R.id.minute_display)
-        calendarWidget = findViewById(R.id.calendar_widget)
-        calendarGrid = calendarWidget.findViewById(R.id.calendar_grid)
+        
+        // Initialize time pickers
+        hourPicker = findViewById(R.id.hour_picker)
+        ampmPicker = findViewById(R.id.ampm_picker)
+        
+        setupTimePickers()
     }
     
     private fun setupMoodSelection() {
-        moodCards.forEachIndexed { index, card ->
-            card.setOnClickListener {
+        moodButtons.forEachIndexed { index, button ->
+            button.setOnClickListener {
                 selectMood(index)
             }
         }
@@ -84,67 +90,62 @@ class MoodLoggingActivity : AppCompatActivity() {
     
     private fun selectMood(moodIndex: Int) {
         selectedMood = moodIndex
-        moodCards.forEachIndexed { index, card ->
-            card.isSelected = (index == moodIndex)
-            
-            // Update text colors based on selection
-            val linearLayout = card.getChildAt(0) as? LinearLayout
-            val textView = linearLayout?.getChildAt(1) as? TextView
-            textView?.setTextColor(
-                if (index == moodIndex) {
-                    resources.getColor(android.R.color.white, null)
-                } else {
-                    resources.getColor(R.color.text_primary, null)
-                }
-            )
+        moodButtons.forEachIndexed { index, button ->
+            button.isSelected = (index == moodIndex)
         }
     }
     
+    private fun setupTimePickers() {
+        // Setup hour picker
+        hourAdapter = TimePickerAdapter(availableHours) { selectedHour ->
+            updateSelectedTime(selectedHour, null)
+        }
+        hourPicker.layoutManager = LinearLayoutManager(this)
+        hourPicker.adapter = hourAdapter
+        
+        // Setup AM/PM picker
+        ampmAdapter = TimePickerAdapter(ampmOptions) { selectedAmPm ->
+            updateSelectedTime(null, selectedAmPm)
+        }
+        ampmPicker.layoutManager = LinearLayoutManager(this)
+        ampmPicker.adapter = ampmAdapter
+        
+        // Set initial selection
+        val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
+        val currentAmPm = if (currentHour < 12) "AM" else "PM"
+        val displayHour = if (currentHour == 0) 12 else if (currentHour > 12) currentHour - 12 else currentHour
+        
+        val hourString = displayHour.toString()
+        val availableHourIndex = availableHours.indexOf(hourString)
+        if (availableHourIndex != -1) {
+            hourAdapter.setSelectedTime(hourString)
+        }
+        ampmAdapter.setSelectedTime(currentAmPm)
+    }
+    
+    private fun updateSelectedTime(selectedHour: String?, selectedAmPm: String?) {
+        val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
+        val currentAmPm = if (currentHour < 12) "AM" else "PM"
+        val displayHour = if (currentHour == 0) 12 else if (currentHour > 12) currentHour - 12 else currentHour
+        
+        val hour = selectedHour ?: displayHour.toString()
+        val ampm = selectedAmPm ?: currentAmPm
+        
+        val hour24 = when {
+            hour == "12" && ampm == "AM" -> 0
+            hour == "12" && ampm == "PM" -> 12
+            ampm == "AM" -> hour.toInt()
+            else -> hour.toInt() + 12
+        }
+        
+        selectedTime.set(Calendar.HOUR_OF_DAY, hour24)
+        selectedTime.set(Calendar.MINUTE, 0) // Always set minutes to 0
+        
+        updateTimeDisplays()
+    }
+    
     private fun setupTimeSelection() {
-        // Hour controls
-        findViewById<View>(R.id.decrease_hour_button).setOnClickListener {
-            val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
-            val newHour = if (currentHour == 0) 23 else currentHour - 1
-            selectedTime.set(Calendar.HOUR_OF_DAY, newHour)
-            updateTimeDisplays()
-        }
-        
-        findViewById<View>(R.id.increase_hour_button).setOnClickListener {
-            val currentHour = selectedTime.get(Calendar.HOUR_OF_DAY)
-            val newHour = if (currentHour == 23) 0 else currentHour + 1
-            selectedTime.set(Calendar.HOUR_OF_DAY, newHour)
-            updateTimeDisplays()
-        }
-        
-        // Minute controls
-        findViewById<View>(R.id.decrease_minute_button).setOnClickListener {
-            val currentMinute = selectedTime.get(Calendar.MINUTE)
-            val newMinute = if (currentMinute == 0) 59 else currentMinute - 1
-            selectedTime.set(Calendar.MINUTE, newMinute)
-            updateTimeDisplays()
-        }
-        
-        findViewById<View>(R.id.increase_minute_button).setOnClickListener {
-            val currentMinute = selectedTime.get(Calendar.MINUTE)
-            val newMinute = if (currentMinute == 59) 0 else currentMinute + 1
-            selectedTime.set(Calendar.MINUTE, newMinute)
-            updateTimeDisplays()
-        }
-        
-        
-        // Calendar navigation
-        calendarWidget.findViewById<View>(R.id.prev_month_button).setOnClickListener {
-            selectedDate.add(Calendar.MONTH, -1)
-            updateMonthYearDisplay()
-            setupCalendar()
-        }
-        
-        calendarWidget.findViewById<View>(R.id.next_month_button).setOnClickListener {
-            selectedDate.add(Calendar.MONTH, 1)
-            updateMonthYearDisplay()
-            setupCalendar()
-        }
-        
+        // Time selection is handled by the time pickers
     }
     
     private fun setupSaveButton() {
@@ -160,156 +161,17 @@ class MoodLoggingActivity : AppCompatActivity() {
     }
     
     private fun updateTimeDisplay() {
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        timeDisplay.text = timeFormat.format(selectedTime.time)
-    }
-    
-    private fun updateTimeDisplays() {
         val hour = selectedTime.get(Calendar.HOUR_OF_DAY)
         val minute = selectedTime.get(Calendar.MINUTE)
         
-        hourDisplay.text = String.format("%02d", hour)
-        minuteDisplay.text = String.format("%02d", minute)
+        val displayHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        val ampm = if (hour < 12) "AM" else "PM"
+        
+        timeDisplay.text = "$displayHour $ampm"
+    }
+    
+    private fun updateTimeDisplays() {
         updateTimeDisplay()
-    }
-    
-    private fun updateMonthYearDisplay() {
-        val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
-        monthYearText.text = monthFormat.format(selectedDate.time)
-    }
-    
-    private fun setupCalendar() {
-        // Clear existing calendar
-        calendarGrid.removeAllViews()
-        dateItems.clear()
-        
-        val calendar = Calendar.getInstance()
-        calendar.time = selectedDate.time
-        
-        // Set to first day of the month
-        calendar.set(Calendar.DAY_OF_MONTH, 1)
-        
-        // Get the first day of the month and number of days
-        val firstDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-        val daysInMonth = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-        
-        // Calculate how many days from previous month to show
-        val daysFromPrevMonth = if (firstDayOfWeek == Calendar.SUNDAY) 0 else firstDayOfWeek - Calendar.SUNDAY
-        
-        // Create calendar rows
-        var currentRow: LinearLayout? = null
-        var dayCount = 0
-        
-        // Add empty cells for days from previous month
-        for (i in 0 until daysFromPrevMonth) {
-            if (dayCount % 7 == 0) {
-                currentRow = createCalendarRow()
-                calendarGrid.addView(currentRow)
-            }
-            
-            val emptyDate = createDateItem(null, false)
-            currentRow?.addView(emptyDate)
-            dayCount++
-        }
-        
-        // Add days of current month
-        for (day in 1..daysInMonth) {
-            if (dayCount % 7 == 0) {
-                currentRow = createCalendarRow()
-                calendarGrid.addView(currentRow)
-            }
-            
-            val dateCalendar = Calendar.getInstance()
-            dateCalendar.time = selectedDate.time
-            dateCalendar.set(Calendar.DAY_OF_MONTH, day)
-            
-            val isToday = isSameDay(dateCalendar, Calendar.getInstance())
-            val dateItem = createDateItem(dateCalendar, true)
-            dateItems.add(dateItem)
-            currentRow?.addView(dateItem)
-            
-            if (isToday) {
-                selectedDateIndex = dateItems.size - 1
-                selectDate(selectedDateIndex)
-            }
-            
-            dayCount++
-        }
-        
-        // Fill remaining cells in last row if needed
-        while (dayCount % 7 != 0) {
-            val emptyDate = createDateItem(null, false)
-            currentRow?.addView(emptyDate)
-            dayCount++
-        }
-    }
-    
-    private fun createCalendarRow(): LinearLayout {
-        val row = LinearLayout(this)
-        row.orientation = LinearLayout.HORIZONTAL
-        row.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        return row
-    }
-    
-    private fun createDateItem(calendar: Calendar?, isClickable: Boolean): TextView {
-        val inflater = LayoutInflater.from(this)
-        val dateItem = inflater.inflate(R.layout.item_calendar_date, calendarGrid, false) as TextView
-        
-        if (calendar != null && isClickable) {
-            val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
-            dateItem.text = dayOfMonth.toString()
-            dateItem.setTextColor(resources.getColor(R.color.text_primary, null))
-            
-            // Set click listener
-            dateItem.setOnClickListener {
-                val index = dateItems.indexOf(dateItem)
-                selectDate(index)
-            }
-        } else {
-            dateItem.text = ""
-            dateItem.setTextColor(resources.getColor(android.R.color.transparent, null))
-            dateItem.isClickable = false
-        }
-        
-        return dateItem
-    }
-    
-    private fun selectDate(index: Int) {
-        if (index < 0 || index >= dateItems.size) return
-        
-        selectedDateIndex = index
-        
-        // Update visual selection
-        dateItems.forEachIndexed { i, item ->
-            if (i == index) {
-                // Selected state
-                item.isSelected = true
-                item.setTextColor(resources.getColor(android.R.color.white, null))
-            } else {
-                // Unselected state
-                item.isSelected = false
-                item.setTextColor(resources.getColor(R.color.text_primary, null))
-            }
-        }
-        
-        // Update selected date - we need to calculate the actual date from the index
-        val calendar = Calendar.getInstance()
-        calendar.time = selectedDate.time
-        calendar.set(Calendar.DAY_OF_MONTH, 1)
-        
-        // Get the first day of the month
-        val firstDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-        val daysFromPrevMonth = if (firstDayOfWeek == Calendar.SUNDAY) 0 else firstDayOfWeek - Calendar.SUNDAY
-        
-        // Calculate the actual day of month
-        val actualDay = index - daysFromPrevMonth + 1
-        if (actualDay > 0 && actualDay <= calendar.getActualMaximum(Calendar.DAY_OF_MONTH)) {
-            calendar.set(Calendar.DAY_OF_MONTH, actualDay)
-            selectedDate.time = calendar.time
-        }
     }
     
     private fun saveMoodEntry() {
@@ -318,42 +180,57 @@ class MoodLoggingActivity : AppCompatActivity() {
             return
         }
         
-        // Check daily limit (10 mood entries per day)
-        val todayMoodEntries = dataManager.getMoodEntriesForDate(selectedTime.time)
-        if (todayMoodEntries.size >= 10) {
-            // Show limit reached message
-            showLimitReachedMessage()
-            return
+        val note = findViewById<TextView>(R.id.mood_note_edit).text.toString()
+        
+        // Combine selected date with selected time
+        val finalDateTime = Calendar.getInstance().apply {
+            // Set the date from selectedDate
+            set(Calendar.YEAR, selectedDate.get(Calendar.YEAR))
+            set(Calendar.MONTH, selectedDate.get(Calendar.MONTH))
+            set(Calendar.DAY_OF_MONTH, selectedDate.get(Calendar.DAY_OF_MONTH))
+            
+            // Set the time from selectedTime
+            set(Calendar.HOUR_OF_DAY, selectedTime.get(Calendar.HOUR_OF_DAY))
+            set(Calendar.MINUTE, selectedTime.get(Calendar.MINUTE))
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
         
-        val moodLevels = listOf(5, 4, 3, 2, 1) // Happy, Excited, Neutral, Sad, Angry
-        val moodEmojis = listOf("😊", "🤩", "😐", "😢", "😠")
-        
+        // Create mood entry with selected date and time
         val moodEntry = MoodEntry(
-            emoji = moodEmojis[selectedMood],
-            moodLevel = moodLevels[selectedMood],
-            note = "",
-            dateTime = selectedTime.time
+            id = UUID.randomUUID().toString(),
+            moodLevel = getMoodLevel(selectedMood), // Convert button index to correct mood level
+            emoji = getMoodEmoji(selectedMood),
+            note = note,
+            dateTime = finalDateTime.time
         )
         
-        dataManager.addMoodEntry(moodEntry)
+        // Save to DataManager
+        val existingEntries = dataManager.loadMoodEntries().toMutableList()
+        existingEntries.add(moodEntry)
+        dataManager.saveMoodEntries(existingEntries)
         
-        // Show success message and finish
+        // Set result and finish activity
+        setResult(RESULT_OK)
         finish()
     }
     
-    private fun showLimitReachedMessage() {
-        // You can implement a custom dialog or toast here
-        // For now, we'll use a simple approach
-        android.widget.Toast.makeText(
-            this,
-            "Daily limit reached! You can only add 10 mood entries per day.",
-            android.widget.Toast.LENGTH_LONG
-        ).show()
+    private fun getMoodLevel(buttonIndex: Int): Int {
+        // Map button indices to correct mood levels
+        // Button order: Happy(0), Excited(1), Neutral(2), Sad(3), Angry(4)
+        // Mood levels: Happy(5), Excited(4), Neutral(3), Sad(2), Angry(1)
+        return when (buttonIndex) {
+            0 -> 5 // Happy
+            1 -> 4 // Excited
+            2 -> 3 // Neutral
+            3 -> 2 // Sad
+            4 -> 1 // Angry
+            else -> 3 // Default to Neutral
+        }
     }
     
-    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
-        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
-                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    private fun getMoodEmoji(moodIndex: Int): String {
+        val emojis = listOf("😊", "🤩", "😐", "😢", "😠")
+        return if (moodIndex in emojis.indices) emojis[moodIndex] else "😐"
     }
 }

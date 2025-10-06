@@ -210,6 +210,8 @@ class HabitsFragment : Fragment() {
                     )
                     dataManager.addHabit(habit)
                     loadHabits()
+                    // Notify parent activity that habits have been updated
+                    onHabitsUpdated?.invoke()
                 } else {
                     Toast.makeText(context, "Please enter a habit name", Toast.LENGTH_SHORT).show()
                 }
@@ -249,6 +251,8 @@ class HabitsFragment : Fragment() {
                     )
                     dataManager.updateHabit(updatedHabit)
                     loadHabits()
+                    // Notify parent activity that habits have been updated
+                    onHabitsUpdated?.invoke()
                 } else {
                     Toast.makeText(context, "Please enter a habit name", Toast.LENGTH_SHORT).show()
                 }
@@ -264,6 +268,8 @@ class HabitsFragment : Fragment() {
             .setPositiveButton("Delete") { _, _ ->
                 dataManager.deleteHabit(habit.id)
                 loadHabits()
+                // Notify parent activity that habits have been updated
+                onHabitsUpdated?.invoke()
             }
             .setNegativeButton("Cancel", null)
             .show()

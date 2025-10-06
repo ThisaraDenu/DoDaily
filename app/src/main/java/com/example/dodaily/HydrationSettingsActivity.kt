@@ -86,6 +86,12 @@ class HydrationSettingsActivity : AppCompatActivity() {
         requestNotificationPermission()
     }
     
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Handle configuration changes (like rotation) without recreating the activity
+        // The layout will automatically switch to landscape/portrait based on the layout-land folder
+    }
+    
     private fun initializeViews() {
         backButton = findViewById(R.id.back_button)
         dailyGoalEdit = findViewById(R.id.daily_goal_edit)

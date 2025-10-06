@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +29,13 @@ class HomeActivity : AppCompatActivity() {
     private var selectedDate: Calendar = Calendar.getInstance()
     private var selectedDateIndex: Int = 0
     private var dateItems: MutableList<View> = mutableListOf()
+    
+    // Habit progress card views
+    private lateinit var homeProgressDate: TextView
+    private lateinit var homeProgressCircle: com.example.dodaily.widgets.CircularProgressView
+    private lateinit var homeProgressPercentage: TextView
+    private lateinit var homeProgressText: TextView
+    private lateinit var homeProgressMotivation: TextView
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +117,15 @@ class HomeActivity : AppCompatActivity() {
         if (completedFragment is CompletedHabitsFragment) {
             completedFragment.updateSelectedDate(selectedDate.time)
         }
+        
+        // Refresh habit progress for selected date
+        updateHabitProgressForDate(selectedDate.time)
+    }
+    
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Handle configuration changes (like rotation) without recreating the activity
+        // The layout will automatically switch to landscape/portrait based on the layout-land folder
     }
     
     private fun replaceFragment(fragment: Fragment) {
@@ -123,6 +140,10 @@ class HomeActivity : AppCompatActivity() {
         habitsFragment.onHabitsUpdated = {
             // Refresh completed habits fragment when habits are updated
             refreshCompletedHabitsFragment()
+            // Refresh habit progress card when habits are updated
+            updateHabitProgressForDate(selectedDate.time)
+            // Update widget when habits are updated
+            updateWidget()
         }
         
         supportFragmentManager.beginTransaction()
@@ -146,6 +167,16 @@ class HomeActivity : AppCompatActivity() {
     
     private fun initializeViews() {
         horizontalCalendarContainer = findViewById(R.id.horizontal_calendar_container)
+        
+        // Initialize habit progress card views
+        homeProgressDate = findViewById(R.id.home_progress_date)
+        homeProgressCircle = findViewById(R.id.home_progress_circle)
+        homeProgressPercentage = findViewById(R.id.home_progress_percentage)
+        homeProgressText = findViewById(R.id.home_progress_text)
+        homeProgressMotivation = findViewById(R.id.home_progress_motivation)
+        
+        // Update habit progress
+        updateHabitProgress()
     }
     
     private fun setupHorizontalCalendar() {
@@ -308,6 +339,9 @@ class HomeActivity : AppCompatActivity() {
         
         // Update habits display for selected date
         updateHabitsFragment()
+        
+        // Update habit progress for selected date
+        updateHabitProgressForDate(selectedDate.time)
     }
     
     private fun updateHabitsFragment() {
@@ -350,6 +384,80 @@ class HomeActivity : AppCompatActivity() {
             testHabits.forEach { habit ->
                 dataManager.addHabit(habit)
             }
+        }
+    }
+    
+    
+    private fun updateHabitProgress() {
+        updateHabitProgressForDate(Date())
+    }
+    
+    private fun updateHabitProgressForDate(date: Date) {
+        val habits = dataManager.loadHabits()
+        val selectedCalendar = Calendar.getInstance()
+        selectedCalendar.time = date
+        
+        // Calculate habit completion for the selected date
+        val completedHabits = habits.count { habit ->
+            val completions = dataManager.getHabitCompletionsForDate(habit.id, date)
+            completions.isNotEmpty()
+        }
+        
+        val totalHabits = habits.size
+        val completionPercentage = if (totalHabits > 0) {
+            (completedHabits * 100) / totalHabits
+        } else {
+            0
+        }
+        
+        // Update date
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        homeProgressDate.text = dateFormat.format(date)
+        
+        // Update progress circle
+        homeProgressCircle.setProgress(completionPercentage)
+        homeProgressCircle.setMaxProgress(100)
+        homeProgressCircle.setProgressColor(resources.getColor(R.color.primary_green, null))
+        homeProgressCircle.setProgressBackgroundColor(resources.getColor(R.color.background_color, null))
+        
+        // Update percentage text
+        homeProgressPercentage.text = "$completionPercentage%"
+        
+        // Update progress text
+        homeProgressText.text = "$completedHabits of $totalHabits habits completed"
+        
+        // Update motivational text based on whether it's today or another date
+        val today = Calendar.getInstance()
+        val isToday = selectedCalendar.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                     selectedCalendar.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
+        
+        homeProgressMotivation.text = if (isToday) {
+            when {
+                completionPercentage == 100 -> "Perfect! 🎉"
+                completionPercentage >= 75 -> "Almost there! 🔥"
+                completionPercentage >= 50 -> "Keep going! 💪"
+                completionPercentage > 0 -> "Good start! 👍"
+                else -> "Let's begin! 🚀"
+            }
+        } else {
+            when {
+                completionPercentage == 100 -> "All done! ✅"
+                completionPercentage >= 75 -> "Great progress! 📈"
+                completionPercentage >= 50 -> "Halfway there! 🎯"
+                completionPercentage > 0 -> "Some progress! 📊"
+                else -> "No habits tracked 📝"
+            }
+        }
+    }
+    
+    private fun updateWidget() {
+        // Update the widget when habits are modified
+        val appWidgetManager = android.appwidget.AppWidgetManager.getInstance(this)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(
+            android.content.ComponentName(this, com.example.dodaily.widgets.HabitWidgetProvider::class.java)
+        )
+        if (appWidgetIds.isNotEmpty()) {
+            com.example.dodaily.widgets.HabitWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetIds[0])
         }
     }
 }

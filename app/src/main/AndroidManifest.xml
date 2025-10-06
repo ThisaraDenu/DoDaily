@@ -24,11 +24,16 @@
         <activity
             android:name=".SettingActivity"
             android:exported="false"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity
+            android:name=".DataPrivacyActivity"
+            android:exported="false" />
         <activity
             android:name=".HomeActivity"
             android:exported="false"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".SignUpActivity"
             android:exported="false" />
@@ -62,13 +67,15 @@
         <activity
             android:name=".MoodPageActivity"
             android:exported="false"
-            android:launchMode="singleTop" />
+            android:launchMode="singleTop"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity
             android:name=".MoodLoggingActivity"
             android:exported="false" />
         <activity
             android:name=".HydrationSettingsActivity"
-            android:exported="false" /> <!-- Services -->
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" /> <!-- Services -->
         <service
             android:name=".services.HydrationReminderService"
             android:enabled="true"
@@ -81,6 +88,19 @@
             android:name=".receivers.HydrationAlarmReceiver"
             android:enabled="true"
             android:exported="false" />
+        
+        <!-- Widget Provider -->
+        <receiver
+            android:name=".widgets.HabitWidgetProvider"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/habit_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

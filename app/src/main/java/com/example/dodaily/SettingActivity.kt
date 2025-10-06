@@ -62,6 +62,12 @@ class SettingActivity : AppCompatActivity() {
         }
     }
     
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Handle configuration changes (like rotation) without recreating the activity
+        // The layout will automatically switch to landscape/portrait based on the layout-land folder
+    }
+    
     private fun setupClickListeners() {
         // Back button
         findViewById<View>(R.id.back_button).setOnClickListener {
@@ -92,13 +98,19 @@ class SettingActivity : AppCompatActivity() {
         // }
         
         // Data & Privacy section
-        // findViewById<View>(R.id.data_privacy_section).setOnClickListener {
-        //     Toast.makeText(this, "Data & Privacy settings coming soon!", Toast.LENGTH_SHORT).show()
-        // }
+        findViewById<View>(R.id.data_privacy_section).setOnClickListener {
+            openDataPrivacySettings()
+        }
         
         // Help & Support section
         // findViewById<View>(R.id.help_support_section).setOnClickListener {
         //     Toast.makeText(this, "Help & Support coming soon!", Toast.LENGTH_SHORT).show()
         // }
+    }
+    
+    private fun openDataPrivacySettings() {
+        // Create a new activity to show the data privacy settings
+        val intent = Intent(this, DataPrivacyActivity::class.java)
+        startActivity(intent)
     }
 }

@@ -120,9 +120,7 @@ class MoodChartFragment : Fragment() {
             lineWidth = 3f
             circleRadius = 6f
             setDrawCircleHole(false)
-            setDrawValues(true)
-            valueTextSize = 12f
-            valueTextColor = Color.BLACK
+            setDrawValues(false)
             setDrawFilled(true)
             fillColor = Color.parseColor("#5F8E5C")
             fillAlpha = 50

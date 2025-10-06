@@ -376,6 +376,7 @@
 
                 <!-- Data & Privacy -->
                 <LinearLayout
+                    android:id="@+id/data_privacy_section"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"

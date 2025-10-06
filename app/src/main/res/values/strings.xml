@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">DoDaily</string>
     <string name="todo1">TODO!</string>
+    
+    <!-- Widget -->
+    <string name="widget_description">Shows today\'s habit completion percentage</string>
 
     <!-- Navigation -->
     <string name="nav_habits">Habits</string>

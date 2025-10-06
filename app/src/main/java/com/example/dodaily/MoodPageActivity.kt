@@ -16,6 +16,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.dodaily.adapters.MoodEntriesAdapter
@@ -51,6 +52,10 @@ class MoodPageActivity : AppCompatActivity() {
     private lateinit var chartPlaceholder: TextView
     private lateinit var chartMessage: TextView
     private lateinit var chartTimeRange: TextView
+    
+    // Summary fragment
+    private lateinit var summaryFragmentContainer: ViewGroup
+    private var summaryFragment: Fragment? = null
     
     // Mood statistics components removed
     
@@ -100,6 +105,12 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Initialize chart with today's data
         updateTodayChart()
+        
+        // Load summary fragment
+        loadSummaryFragment()
+        
+        // Set initial visibility (today trend is selected by default)
+        updateSummaryFragmentVisibility(currentTrendType)
     }
     
     override fun onResume() {
@@ -110,12 +121,22 @@ class MoodPageActivity : AppCompatActivity() {
         updateTodayChart()
     }
     
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Handle configuration changes (like rotation) without recreating the activity
+        // The layout will automatically switch to landscape/portrait based on the layout-land folder
+    }
+    
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         
         if (requestCode == REQUEST_UPDATE_MOOD && resultCode == RESULT_OK) {
             // Refresh data after mood update
             loadMoodData()
+            updateTodayChart()
+        } else if (requestCode == REQUEST_ADD_MOOD && resultCode == RESULT_OK) {
+            // Refresh data after adding new mood
+            filterMoodEntriesForDate(selectedDate.time)
             updateTodayChart()
         }
     }
@@ -140,6 +161,9 @@ class MoodPageActivity : AppCompatActivity() {
         chartPlaceholder = findViewById(R.id.chart_placeholder)
         chartMessage = findViewById(R.id.chart_message)
         chartTimeRange = findViewById(R.id.chart_time_range)
+        
+        // Initialize summary fragment container
+        summaryFragmentContainer = findViewById(R.id.summary_fragment_container)
         
         // Mood statistics components removed
         
@@ -182,9 +206,10 @@ class MoodPageActivity : AppCompatActivity() {
     
     private fun setupClickListeners() {
         addMoodButton.setOnClickListener {
-            // Navigate to MoodLoggingActivity for adding new mood
+            // Navigate to MoodLoggingActivity for adding new mood with selected date
             val intent = Intent(this, MoodLoggingActivity::class.java)
-            startActivity(intent)
+            intent.putExtra("selected_date", selectedDate.timeInMillis)
+            startActivityForResult(intent, REQUEST_ADD_MOOD)
         }
         
         backButton.setOnClickListener {
@@ -274,12 +299,21 @@ class MoodPageActivity : AppCompatActivity() {
     
     private fun updateDailyLimitInfo() {
         val today = Calendar.getInstance()
-        val todayMoodEntries = dataManager.getMoodEntriesForDate(today.time)
-        val remainingEntries = 10 - todayMoodEntries.size
+        val isToday = selectedDate.get(Calendar.YEAR) == today.get(Calendar.YEAR) && 
+                     selectedDate.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
+        
+        // Only show daily limit info for today's date
+        if (!isToday) {
+            dailyLimitIndicator.visibility = View.GONE
+            return
+        }
+        
+        val selectedDateMoodEntries = dataManager.getMoodEntriesForDate(selectedDate.time)
+        val remainingEntries = 10 - selectedDateMoodEntries.size
         
         // Update the daily limit indicator
-        dailyLimitIndicator.text = "Daily entries: ${todayMoodEntries.size}/10"
-        dailyLimitIndicator.visibility = if (todayMoodEntries.size > 0) View.VISIBLE else View.GONE
+        dailyLimitIndicator.text = "Daily entries: ${selectedDateMoodEntries.size}/10"
+        dailyLimitIndicator.visibility = if (selectedDateMoodEntries.size > 0) View.VISIBLE else View.GONE
         
         // Change color based on remaining entries
         when {
@@ -295,7 +329,7 @@ class MoodPageActivity : AppCompatActivity() {
             }
         }
         
-        // Show warning when only 2 or fewer entries remaining
+        // Show warning when only 2 or fewer entries remaining (only for today)
         if (remainingEntries <= 2 && remainingEntries > 0) {
             android.widget.Toast.makeText(
                 this,
@@ -348,6 +382,9 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Update chart content based on selected trend
         updateTrendChart(trendType)
+        
+        // Show/hide summary fragment based on trend type
+        updateSummaryFragmentVisibility(trendType)
     }
     
     private fun updateTrendChart(trendType: String) {
@@ -387,12 +424,165 @@ class MoodPageActivity : AppCompatActivity() {
     }
     
     private fun updateWeeklyChart() {
-        chartPlaceholder.text = "📊"
-        chartMessage.text = "Weekly mood trends coming soon"
-        chartMessage.visibility = View.VISIBLE
-        chartPlaceholder.visibility = View.VISIBLE
+        val calendar = Calendar.getInstance()
+        val weeklyMoodData = mutableListOf<Pair<String, Float>>()
+        
+        // Get last 7 days
+        for (i in 6 downTo 0) {
+            val dayCalendar = Calendar.getInstance()
+            dayCalendar.add(Calendar.DAY_OF_YEAR, -i)
+            
+            val dayEntries = dataManager.getMoodEntriesForDate(dayCalendar.time)
+            val commonMood = if (dayEntries.isNotEmpty()) {
+                // Get the most common mood level for this day
+                val moodCounts = dayEntries.groupBy { it.moodLevel }.mapValues { it.value.size }
+                val mostCommonMoodLevel = moodCounts.maxByOrNull { it.value }?.key ?: 0
+                mostCommonMoodLevel.toFloat()
+            } else {
+                0f // No data
+            }
+            
+            val dayName = when (dayCalendar.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.MONDAY -> "M"
+                Calendar.TUESDAY -> "T"
+                Calendar.WEDNESDAY -> "W"
+                Calendar.THURSDAY -> "T"
+                Calendar.FRIDAY -> "F"
+                Calendar.SATURDAY -> "S"
+                Calendar.SUNDAY -> "S"
+                else -> "?"
+            }
+            
+            weeklyMoodData.add(Pair(dayName, commonMood))
+        }
+        
+        if (weeklyMoodData.any { it.second > 0 }) {
+            // Show chart data
+            chartPlaceholder.visibility = View.GONE
+            chartMessage.visibility = View.GONE
+            drawWeeklyMoodChart(weeklyMoodData)
+        } else {
+            // Show empty state
+            chartPlaceholder.text = "📊"
+            chartMessage.text = "No mood data for the last 7 days"
+            chartMessage.visibility = View.VISIBLE
+            chartPlaceholder.visibility = View.VISIBLE
+            clearChartData()
+        }
+        
+        // Update time range
         chartTimeRange.text = "Last 7 days"
-        clearChartData()
+    }
+    
+    private fun drawWeeklyMoodChart(weeklyMoodData: List<Pair<String, Float>>) {
+        // Clear existing chart
+        moodChartContainer.removeAllViews()
+        
+        // Create LineChart
+        val lineChart = com.github.mikephil.charting.charts.LineChart(this)
+        val layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            400.dpToPx()
+        )
+        lineChart.layoutParams = layoutParams
+        
+        // Configure chart appearance
+        lineChart.setBackgroundColor(resources.getColor(R.color.white, null))
+        lineChart.description.isEnabled = false
+        lineChart.setTouchEnabled(true)
+        lineChart.isDragEnabled = true
+        lineChart.setScaleEnabled(true)
+        lineChart.setPinchZoom(true)
+        lineChart.setDrawGridBackground(false)
+        lineChart.setDrawBorders(false)
+        
+        // Configure legend
+        val legend = lineChart.legend
+        legend.isEnabled = false
+        
+        // Configure X-axis
+        val xAxis = lineChart.xAxis
+        xAxis.position = com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+        xAxis.setDrawGridLines(true)
+        xAxis.setDrawAxisLine(true)
+        xAxis.granularity = 1f
+        xAxis.textColor = resources.getColor(R.color.text_primary, null)
+        xAxis.textSize = 12f
+        xAxis.setDrawLabels(true)
+        xAxis.gridColor = resources.getColor(R.color.text_secondary, null)
+        xAxis.gridLineWidth = 0.5f
+        
+        // Set X-axis labels (days)
+        val dayLabels = weeklyMoodData.map { it.first }.toTypedArray()
+        xAxis.valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                val index = value.toInt()
+                return if (index in dayLabels.indices) dayLabels[index] else ""
+            }
+        }
+        
+        // Configure Y-axis
+        val leftAxis = lineChart.axisLeft
+        leftAxis.setDrawGridLines(true)
+        leftAxis.setDrawAxisLine(true)
+        leftAxis.axisMinimum = 0.5f
+        leftAxis.axisMaximum = 5.5f
+        leftAxis.granularity = 1f
+        leftAxis.textColor = resources.getColor(R.color.text_primary, null)
+        leftAxis.textSize = 12f
+        leftAxis.gridColor = resources.getColor(R.color.text_secondary, null)
+        leftAxis.gridLineWidth = 0.5f
+        
+        // Set Y-axis labels (mood emojis)
+        val moodEmojis = listOf("😠", "😢", "😐", "🤩", "😊")
+        leftAxis.valueFormatter = object : com.github.mikephil.charting.formatter.ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                val index = (value - 1).toInt()
+                return if (index in moodEmojis.indices) moodEmojis[index] else ""
+            }
+        }
+        
+        // Hide right Y-axis
+        val rightAxis = lineChart.axisRight
+        rightAxis.isEnabled = false
+        
+        // Prepare data - only include days with mood data
+        val entries = mutableListOf<com.github.mikephil.charting.data.Entry>()
+        weeklyMoodData.forEachIndexed { index, (_, moodLevel) ->
+            if (moodLevel > 0) {
+                entries.add(com.github.mikephil.charting.data.Entry(index.toFloat(), moodLevel))
+            }
+        }
+        
+        if (entries.isNotEmpty()) {
+            // Create dataset
+            val dataSet = com.github.mikephil.charting.data.LineDataSet(entries, "Mood Level").apply {
+                color = resources.getColor(R.color.primary_green, null)
+                setCircleColor(resources.getColor(R.color.primary_green, null))
+                lineWidth = 3f
+                circleRadius = 6f
+                setDrawCircleHole(false)
+                setDrawValues(false)
+                setDrawFilled(true)
+                fillColor = resources.getColor(R.color.primary_green, null)
+                fillAlpha = 50
+                setDrawHorizontalHighlightIndicator(false)
+                setDrawVerticalHighlightIndicator(true)
+                highlightLineWidth = 2f
+            }
+            
+            // Set data
+            val lineData = com.github.mikephil.charting.data.LineData(dataSet)
+            lineChart.data = lineData
+            lineChart.invalidate()
+        }
+        
+        // Add chart to container
+        moodChartContainer.addView(lineChart)
+    }
+    
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
     }
     
     private fun updateMonthlyChart() {
@@ -435,21 +625,83 @@ class MoodPageActivity : AppCompatActivity() {
             }
         }
         
+        // Create chart container with y-axis
+        val chartContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                700 // Further increased height for better visualization
+            ).apply {
+                setMargins(0, 0, 0, 8)
+            }
+        }
+        
+        // Create y-axis with mood levels
+        val yAxis = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                50, // Fixed width for y-axis
+                LinearLayout.LayoutParams.MATCH_PARENT
+            ).apply {
+                setMargins(0, 0, 8, 0)
+            }
+        }
+        
+        // Add y-axis title
+        val yAxisTitle = TextView(this).apply {
+            text = "Level"
+            textSize = 8f
+            setTextColor(getColor(R.color.text_secondary))
+            gravity = android.view.Gravity.CENTER
+            rotation = -90f // Rotate text vertically
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 0, 0, 8)
+            }
+        }
+        yAxis.addView(yAxisTitle)
+        
+        // Add mood level labels (5 to 0, top to bottom)
+        val moodLevels = listOf(5, 4, 3, 2, 1, 0)
+        val moodLevelTexts = listOf("5", "4", "3", "2", "1", "0")
+        
+        for (i in moodLevels.indices) {
+            val levelLabel = TextView(this).apply {
+                text = moodLevelTexts[i]
+                textSize = 10f
+                setTextColor(getColor(R.color.text_secondary))
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    weight = 1f
+                }
+            }
+            yAxis.addView(levelLabel)
+        }
+        
         // Create chart area
         val chartArea = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.BOTTOM
             background = getDrawable(R.drawable.chart_background)
             layoutParams = LinearLayout.LayoutParams(
+                0,
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                530 // Maximum possible height within 350dp card
-            ).apply {
-                setMargins(0, 0, 0, 8)
-            }
+                1f
+            )
         }
         
-        // Create time slots (6 AM to 11 PM = 18 hours, every 2 hours)
-        val timeSlots = listOf(6, 8, 10, 12, 14, 16, 18, 20, 22)
+        // Add y-axis to chart container
+        chartContainer.addView(yAxis)
+        chartContainer.addView(chartArea)
+        
+        // Create time slots (6 AM to 12 AM = 18 hours, every 2 hours)
+        val timeSlots = listOf(6, 8, 10, 12, 14, 16, 18, 20, 22, 0)
         
         // Draw chart bars for each time slot
         for (hour in timeSlots) {
@@ -474,7 +726,7 @@ class MoodPageActivity : AppCompatActivity() {
             // Calculate bar height and color
             val (barHeight, barColor, moodText) = if (hourEntries.isNotEmpty()) {
                 val avgMood = hourEntries.map { it.moodLevel }.average()
-                val height = (avgMood / 5.0 * 280).toInt() + 35 // Scale to 280dp max + 35dp base
+                val height = (avgMood / 5.0 * 400).toInt() + 60 // Scale to 400dp max + 60dp base for 0-5 scale
                 val color = when {
                     avgMood >= 4.5 -> R.color.mood_very_happy // Happy (5)
                     avgMood >= 3.5 -> R.color.mood_happy // Excited (4)
@@ -491,7 +743,7 @@ class MoodPageActivity : AppCompatActivity() {
                 }
                 Triple(height, color, moodDesc)
             } else {
-                Triple(20, R.color.background_color, "⚪")
+                Triple(15, R.color.background_color, "⚪") // Smaller empty state bar for level 0
             }
             
             // Create mood bar with rounded corners
@@ -517,24 +769,17 @@ class MoodPageActivity : AppCompatActivity() {
                 )
             }
             
-            // Add entry count for all bars
-            val entryCount = TextView(this).apply {
-                text = "${hourEntries.size}"
-                textSize = 10f
-                setTextColor(getColor(R.color.text_secondary))
-                gravity = android.view.Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-            moodBar.addView(entryCount)
             
             moodBar.addView(moodEmoji)
             
             // Create hour label
             val hourLabel = TextView(this).apply {
-                text = if (hour == 12) "12PM" else if (hour < 12) "${hour}AM" else "${hour-12}PM"
+                text = when {
+                    hour == 0 -> "12AM"
+                    hour == 12 -> "12PM"
+                    hour < 12 -> "${hour}AM"
+                    else -> "${hour-12}PM"
+                }
                 textSize = 10f
                 setTextColor(getColor(R.color.text_secondary))
                 gravity = android.view.Gravity.CENTER
@@ -595,7 +840,7 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Add all components to main container
         mainChartContainer.addView(chartTitle)
-        mainChartContainer.addView(chartArea)
+        mainChartContainer.addView(chartContainer)
         mainChartContainer.addView(moodScale)
         
         // Add chart to container
@@ -822,8 +1067,14 @@ class MoodPageActivity : AppCompatActivity() {
             moodEntriesRecycler.visibility = View.VISIBLE
         }
         
+        // Update daily limit info for the selected date
+        updateDailyLimitInfo()
+        
         // Update chart for selected date
         updateChartForSelectedDate()
+        
+        // Update summary fragment
+        updateSummaryFragment()
     }
     
     private fun updateChartForSelectedDate() {
@@ -846,6 +1097,7 @@ class MoodPageActivity : AppCompatActivity() {
     
     companion object {
         private const val REQUEST_UPDATE_MOOD = 1001
+        private const val REQUEST_ADD_MOOD = 1002
     }
     
     private fun showDeleteConfirmationDialog(moodEntry: MoodEntry) {
@@ -875,6 +1127,35 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Show confirmation
         Toast.makeText(this, "Mood entry deleted", Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun loadSummaryFragment() {
+        summaryFragment = com.example.dodaily.fragments.SummaryFragment.newInstance(selectedDate.time)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.summary_fragment_container, summaryFragment!!)
+            .commit()
+    }
+    
+    private fun updateSummaryFragment() {
+        summaryFragment?.let { fragment ->
+            if (fragment is com.example.dodaily.fragments.SummaryFragment) {
+                // Update summary with the selected date
+                fragment.updateSelectedDate(selectedDate.time)
+            }
+        }
+    }
+    
+    private fun updateSummaryFragmentVisibility(trendType: String) {
+        when (trendType) {
+            "today" -> {
+                // Show summary fragment for today trend
+                summaryFragmentContainer.visibility = View.VISIBLE
+            }
+            "weekly", "monthly" -> {
+                // Hide summary fragment for weekly and monthly trends
+                summaryFragmentContainer.visibility = View.GONE
+            }
+        }
     }
     
 }

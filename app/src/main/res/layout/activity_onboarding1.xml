@@ -14,8 +14,8 @@
     <!-- Illustration -->
     <TextView
         android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="390dp"
+        android:layout_height="114dp"
         android:fontFamily="sans-serif-medium"
         android:text="Welcome to DoDaily"
         android:textAlignment="center"
@@ -49,8 +49,8 @@
 
     <TextView
         android:id="@+id/subtitle"
-        android:layout_width="347dp"
-        android:layout_height="65dp"
+        android:layout_width="329dp"
+        android:layout_height="63dp"
         android:fontFamily="sans-serif-condensed"
         android:text="Plan your day, track your health, feel better."
         android:textAlignment="center"

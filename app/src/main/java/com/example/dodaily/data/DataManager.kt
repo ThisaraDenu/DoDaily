@@ -172,6 +172,14 @@ class DataManager(private val context: Context) {
     }
     
     /**
+     * Get habit completions for a specific habit and date
+     */
+    fun getHabitCompletionsForDate(habitId: String, date: Date): List<HabitCompletion> {
+        val dateKey = getDateKey(date)
+        return loadHabitCompletions().filter { it.habitId == habitId && it.dateKey == dateKey }
+    }
+    
+    /**
      * Get all habits with their completion status for a specific date
      */
     fun getHabitsWithCompletionForDate(date: Date): List<HabitWithCompletion> {
