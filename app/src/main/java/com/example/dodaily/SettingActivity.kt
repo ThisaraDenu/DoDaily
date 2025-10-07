@@ -1,16 +1,23 @@
 package com.example.dodaily
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.button.MaterialButton
 
 class SettingActivity : AppCompatActivity() {
+    
+    private lateinit var logoutButton: MaterialButton
+    private lateinit var sharedPreferences: SharedPreferences
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -20,6 +27,12 @@ class SettingActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("user_auth", MODE_PRIVATE)
+        
+        // Initialize logout button
+        logoutButton = findViewById(R.id.logout_button)
         
         setupBottomNavigation()
         setupClickListeners()
@@ -74,10 +87,10 @@ class SettingActivity : AppCompatActivity() {
             onBackPressed()
         }
         
-        // Profile section - you can add specific navigation here
-        // findViewById<View>(R.id.profile_section).setOnClickListener {
-        //     // Navigate to profile settings
-        // }
+        // Profile section - navigate to profile page
+        findViewById<View>(R.id.profile_section).setOnClickListener {
+            openProfilePage()
+        }
         
         // For now, show toast messages for each section
         // You can replace these with actual navigation to specific settings pages
@@ -106,11 +119,70 @@ class SettingActivity : AppCompatActivity() {
         // findViewById<View>(R.id.help_support_section).setOnClickListener {
         //     Toast.makeText(this, "Help & Support coming soon!", Toast.LENGTH_SHORT).show()
         // }
+        
+        // Sign Out section
+        findViewById<View>(R.id.sign_out_section).setOnClickListener {
+            showSignOutConfirmation()
+        }
+        
+        // Logout button
+        logoutButton.setOnClickListener {
+            logout()
+        }
     }
     
     private fun openDataPrivacySettings() {
         // Create a new activity to show the data privacy settings
         val intent = Intent(this, DataPrivacyActivity::class.java)
         startActivity(intent)
+    }
+    
+    private fun openProfilePage() {
+        val intent = Intent(this, ProfileActivity::class.java)
+        startActivity(intent)
+    }
+    
+    private fun showSignOutConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Sign Out")
+            .setMessage("Are you sure you want to sign out?")
+            .setPositiveButton("Sign Out") { _, _ ->
+                signOut()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun signOut() {
+        // Just set logged in to false, keep user data for easy re-login
+        val sharedPreferences = getSharedPreferences("user_auth", MODE_PRIVATE)
+        sharedPreferences.edit().apply {
+            putBoolean("user_logged_in", false)
+            apply()
+        }
+        
+        Toast.makeText(this, "Signed out successfully!", Toast.LENGTH_SHORT).show()
+        
+        // Navigate to login screen
+        val intent = Intent(this, LogInActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
+    }
+    
+    private fun logout() {
+        // Just set logged in to false, keep user data for easy re-login
+        sharedPreferences.edit().apply {
+            putBoolean("user_logged_in", false)
+            apply()
+        }
+        
+        Toast.makeText(this, "Logged out successfully!", Toast.LENGTH_SHORT).show()
+        
+        // Navigate to login screen
+        val intent = Intent(this, LogInActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
     }
 }

@@ -12,10 +12,15 @@
 <!-- Title -->
 
     <!-- Illustration -->
+
+    <!-- Subtitle -->
+
+    <!-- Buttons -->
+
     <TextView
         android:id="@+id/title"
-        android:layout_width="390dp"
-        android:layout_height="114dp"
+        android:layout_width="269dp"
+        android:layout_height="116dp"
         android:fontFamily="sans-serif-medium"
         android:text="Welcome to DoDaily"
         android:textAlignment="center"
@@ -23,14 +28,9 @@
         android:textSize="48sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.504"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.126" />
-
-    <!-- Subtitle -->
-
-    <!-- Buttons -->
+        app:layout_constraintVertical_bias="0.092" />
 
     <ImageView
         android:id="@+id/illustration"
@@ -49,8 +49,9 @@
 
     <TextView
         android:id="@+id/subtitle"
-        android:layout_width="329dp"
-        android:layout_height="63dp"
+        android:layout_width="347dp"
+        android:layout_height="65dp"
+        android:layout_marginBottom="4dp"
         android:fontFamily="sans-serif-condensed"
         android:text="Plan your day, track your health, feel better."
         android:textAlignment="center"

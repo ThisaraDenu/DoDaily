@@ -1,6 +1,7 @@
 package com.example.dodaily
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -39,6 +40,13 @@ class HomeActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Check if user is logged in
+        if (!isUserLoggedIn()) {
+            redirectToLogin()
+            return
+        }
+        
         enableEdgeToEdge()
         setContentView(R.layout.activity_home)
         
@@ -459,5 +467,17 @@ class HomeActivity : AppCompatActivity() {
         if (appWidgetIds.isNotEmpty()) {
             com.example.dodaily.widgets.HabitWidgetProvider.updateAppWidget(this, appWidgetManager, appWidgetIds[0])
         }
+    }
+    
+    private fun isUserLoggedIn(): Boolean {
+        val sharedPreferences = getSharedPreferences("user_auth", MODE_PRIVATE)
+        return sharedPreferences.getBoolean("user_logged_in", false)
+    }
+    
+    private fun redirectToLogin() {
+        val intent = Intent(this, LogInActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
     }
 }

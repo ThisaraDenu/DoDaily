@@ -13,10 +13,15 @@
 
     <!-- Illustration -->
 
+
+    <!-- Subtitle -->
+
+    <!-- Buttons -->
+
     <TextView
         android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="233dp"
+        android:layout_height="121dp"
         android:fontFamily="sans-serif-medium"
         android:text="Hydration Reminder"
         android:textAlignment="center"
@@ -26,12 +31,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.135" />
-
-
-    <!-- Subtitle -->
-
-    <!-- Buttons -->
+        app:layout_constraintVertical_bias="0.122" />
 
     <ImageView
         android:id="@+id/illustration"
@@ -52,6 +52,7 @@
         android:id="@+id/subtitle"
         android:layout_width="347dp"
         android:layout_height="65dp"
+        android:layout_marginBottom="4dp"
         android:fontFamily="sans-serif-condensed"
         android:text="Receive notifications to help you stay hydrated throughout the day."
         android:textAlignment="center"
