@@ -49,8 +49,8 @@ class MoodPageActivity : AppCompatActivity() {
     
     // Chart components
     private lateinit var moodChartContainer: LinearLayout
-    private lateinit var chartPlaceholder: TextView
-    private lateinit var chartMessage: TextView
+    private var chartPlaceholder: TextView? = null
+    private var chartMessage: TextView? = null
     private lateinit var chartTimeRange: TextView
     
     // Summary fragment
@@ -158,9 +158,11 @@ class MoodPageActivity : AppCompatActivity() {
         
         // Initialize chart components
         moodChartContainer = findViewById(R.id.mood_chart_container)
-        chartPlaceholder = findViewById(R.id.chart_placeholder)
-        chartMessage = findViewById(R.id.chart_message)
         chartTimeRange = findViewById(R.id.chart_time_range)
+        
+        // These views might not exist in the layout, so we'll handle them safely
+        chartPlaceholder = findViewById(R.id.chart_placeholder) // This might be null
+        chartMessage = findViewById(R.id.chart_message) // This might be null
         
         // Initialize summary fragment container
         summaryFragmentContainer = findViewById(R.id.summary_fragment_container)
@@ -407,15 +409,15 @@ class MoodPageActivity : AppCompatActivity() {
         
         if (todayMoodEntries.isEmpty()) {
             // Show empty state
-            chartPlaceholder.text = "📈"
-            chartMessage.text = "No mood data for today yet"
-            chartMessage.visibility = View.VISIBLE
-            chartPlaceholder.visibility = View.VISIBLE
+            chartPlaceholder?.text = "📈"
+            chartMessage?.text = "No mood data for today yet"
+            chartMessage?.visibility = View.VISIBLE
+            chartPlaceholder?.visibility = View.VISIBLE
             clearChartData()
         } else {
             // Show chart data
-            chartPlaceholder.visibility = View.GONE
-            chartMessage.visibility = View.GONE
+            chartPlaceholder?.visibility = View.GONE
+            chartMessage?.visibility = View.GONE
             drawTodayMoodChart(todayMoodEntries)
         }
         
@@ -458,15 +460,15 @@ class MoodPageActivity : AppCompatActivity() {
         
         if (weeklyMoodData.any { it.second > 0 }) {
             // Show chart data
-            chartPlaceholder.visibility = View.GONE
-            chartMessage.visibility = View.GONE
+            chartPlaceholder?.visibility = View.GONE
+            chartMessage?.visibility = View.GONE
             drawWeeklyMoodChart(weeklyMoodData)
         } else {
             // Show empty state
-            chartPlaceholder.text = "📊"
-            chartMessage.text = "No mood data for the last 7 days"
-            chartMessage.visibility = View.VISIBLE
-            chartPlaceholder.visibility = View.VISIBLE
+            chartPlaceholder?.text = "📊"
+            chartMessage?.text = "No mood data for the last 7 days"
+            chartMessage?.visibility = View.VISIBLE
+            chartPlaceholder?.visibility = View.VISIBLE
             clearChartData()
         }
         
@@ -586,10 +588,10 @@ class MoodPageActivity : AppCompatActivity() {
     }
     
     private fun updateMonthlyChart() {
-        chartPlaceholder.text = "📅"
-        chartMessage.text = "Monthly mood trends coming soon"
-        chartMessage.visibility = View.VISIBLE
-        chartPlaceholder.visibility = View.VISIBLE
+        chartPlaceholder?.text = "📅"
+        chartMessage?.text = "Monthly mood trends coming soon"
+        chartMessage?.visibility = View.VISIBLE
+        chartPlaceholder?.visibility = View.VISIBLE
         chartTimeRange.text = "Last 30 days"
         clearChartData()
     }
@@ -1084,7 +1086,7 @@ class MoodPageActivity : AppCompatActivity() {
             chartTimeRange.text = "Selected Date"
         } else {
             clearChartData()
-            chartMessage.text = "No mood data for selected date"
+            chartMessage?.text = "No mood data for selected date"
             chartTimeRange.text = "Selected Date"
         }
     }

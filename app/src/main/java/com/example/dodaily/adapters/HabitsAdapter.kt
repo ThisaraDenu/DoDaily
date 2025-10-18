@@ -9,7 +9,7 @@ import com.example.dodaily.R
 import com.example.dodaily.model.Habit
 
 /**
- * RecyclerView Adapter for displaying habits
+ *  * RecyclerView Adapter for displaying habits
  */
 class HabitsAdapter(
     private val habits: List<Habit>,
