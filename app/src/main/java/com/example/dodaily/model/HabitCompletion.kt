@@ -1,5 +1,8 @@
 package com.example.dodaily.model
 
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.util.Date
 
 /**
@@ -10,7 +13,12 @@ import java.util.Date
  * @param isCompleted Whether the habit target was fully met
  * @param completedAt Timestamp when the completion was recorded
  */
+@Entity(
+    tableName = "habit_completions",
+    indices = [Index(value = ["habitId", "dateKey"], unique = true)]
+)
 data class HabitCompletion(
+    @PrimaryKey(autoGenerate = true) val completionId: Long = 0,
     val habitId: String,
     val dateKey: String,
     val completedCount: Int = 0,

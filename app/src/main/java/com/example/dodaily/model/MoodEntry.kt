@@ -1,5 +1,7 @@
 package com.example.dodaily.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.io.Serializable
 import java.util.Date
 
@@ -11,8 +13,9 @@ import java.util.Date
  * @param dateTime When the mood was logged
  * @param moodLevel Numeric representation of mood (1-5 scale)
  */
+@Entity(tableName = "mood_entries")
 data class MoodEntry(
-    val id: String = "",
+    @PrimaryKey val id: String = "",
     val emoji: String = "😊",
     val note: String = "",
     val dateTime: Date = Date(),
