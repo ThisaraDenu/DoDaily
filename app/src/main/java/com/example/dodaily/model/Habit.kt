@@ -1,7 +1,5 @@
 package com.example.dodaily.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 import java.util.Date
 
 /**
@@ -15,9 +13,8 @@ import java.util.Date
  * @param createdDate When the habit was created
  * @param emoji Emoji representation of the habit
  */
-@Entity(tableName = "habits")
 data class Habit(
-    @PrimaryKey val id: String = "",
+    val id: String = "",
     val name: String = "",
     val description: String = "",
     val targetCount: Int = 1,
